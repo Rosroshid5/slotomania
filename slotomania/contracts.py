@@ -53,6 +53,7 @@ class PrimitiveField(Sloto):
     __slots__ = ["name", "value_type"]
 
     def __init__(self, name: str, value_type: PrimitiveValueType) -> None:
+        assert isinstance(value_type, PrimitiveValueType)
         self.name = name
         self.value_type = value_type
 
@@ -61,6 +62,7 @@ class NestedField(Sloto):
     __slots__ = ["name", "sub_contract"]
 
     def __init__(self, name: str, sub_contract: "Contract") -> None:
+        assert isinstance(sub_contract, Contract)
         self.name = name
         self.sub_contract = sub_contract
 
@@ -73,6 +75,8 @@ class ListField(Sloto):
         name: str,
         item_type: Union["Contract", PrimitiveValueType],
     ) -> None:
+        assert isinstance(item_type, Contract
+                          ) or isinstance(item_type, PrimitiveValueType)
         self.name = name
         self.item_type = item_type
 
