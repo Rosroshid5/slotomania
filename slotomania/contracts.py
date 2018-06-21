@@ -72,7 +72,7 @@ class PrimitiveField(Sloto):
 
 
 class NestedField(Sloto):
-    __slots__ = ["name", "sub_contract"]
+    __slots__ = ["sub_contract"]
 
     def __init__(self, name: str, sub_contract: "Contract") -> None:
         assert isinstance(sub_contract, Contract)
@@ -114,3 +114,24 @@ class Contract(Sloto):
     def translate_to_slots(self) -> str:
         for f in self.fields:
             print(f.to_python_type())
+
+        # sorted_field_tuples = sorted(fields_map.items(), key=lambda t: (not getattr(t[1], 'required', True), t[0]))
+        # field_lines = ',\n        '.join(
+        #     [
+        #         '{0}: {1}{2}'.format(
+        #             name, translate_to_python_field(field), '' if getattr(field, 'required', True) else ' = None'
+        #         ) for name, field in sorted_field_tuples
+        #     ]
+        # )
+        # field_names = ', '.join(sorted(f"'{name}'" for name in fields_map))
+        # assignments = '\n        '.join(f'self.{name} = {name}' for name, field in sorted_field_tuples)
+        # code = f'''
+        # class {class_name}:
+        #     __slots__ = [{field_names}]
+        #     def __init__(
+        #         self,
+        #         {field_lines}
+        #         ) -> None:
+        #         {assignments}
+        # '''
+        # return format_python_code(code)
