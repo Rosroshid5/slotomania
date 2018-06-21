@@ -117,8 +117,6 @@ class Contract(Sloto):
         self.fields = fields
 
     def translate_to_slots(self) -> str:
-        # field_names = [f.name for f in self.fields]
-        # sorted_field_tuples = sorted(fields_map.items(), key=lambda t: (not getattr(t[1], 'required', True), t[0]))
         init_args = ",\n        ".join(
             [
                 f"{field.name}: {field.to_python_type()}"
@@ -130,6 +128,10 @@ class Contract(Sloto):
             f"self.{field.name} = {field.name}" for field in self.fields
         )
         code = f"""
+import datetime
+import decimal
+import typing
+
 class {self.name}:
     __slots__ = [{field_names}]
     def __init__(
