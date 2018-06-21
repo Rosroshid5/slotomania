@@ -11,20 +11,21 @@ with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
     long_description = f.read()
 
 setup(
-    name='django-leader',
+    name='slotomania',
     version='0.0.39',
-    description='Leader API',
+    description='Slotomania',
     long_description=long_description,
-    url='https://github.com/conanfanli/leader',
+    url='https://github.com/conanfanli/slotomania',
     packages=find_packages(exclude=['tests*']),
     install_requires=['yapf>=0.21'],
     python_requires='~=3.6',
     extras_require={'dev': ['ipython', 'mypy']},
     classifiers=[
-        'Development Status :: 3 - Alpha', 'License :: OSI Approved :: MIT License',
+        'Development Status :: 3 - Alpha',
+        'License :: OSI Approved :: MIT License',
         'Programming Language :: Python :: 3.6'
     ],
-    keywords='leader',
+    keywords='slotomania',
     author='Conan Li',
     author_email='conanlics@gmail.com',
     license='MIT',
