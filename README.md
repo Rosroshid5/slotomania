@@ -1,13 +1,11 @@
-
 Slotomania
-==========
-
+================
 A code generator that transforms schemas to Python slot classes and typescript interfaces
 
 Examples
 ========
 
-.. code-block:: Python
-
-   from slotomania import Contract
-   my_contract = Contract(fields=[])
+```Python
+from slotomania import Contract
+my_contract = Contract(fields=[])
+```
