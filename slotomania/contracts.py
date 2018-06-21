@@ -1,8 +1,13 @@
 import pprint
 from enum import Enum, auto
 from typing import List, Union, ClassVar
+from yapf.yapflib.yapf_api import FormatCode
 
 FieldTypes = Union["PrimitiveField", "NestedField", "ListField"]
+
+
+def format_python_code(code: str, style_config='setup.cfg'):
+    return FormatCode(f'{code}')[0]
 
 
 class PrimitiveValueType(Enum):
@@ -112,26 +117,26 @@ class Contract(Sloto):
         self.fields = fields
 
     def translate_to_slots(self) -> str:
-        for f in self.fields:
-            print(f.to_python_type())
-
+        # field_names = [f.name for f in self.fields]
         # sorted_field_tuples = sorted(fields_map.items(), key=lambda t: (not getattr(t[1], 'required', True), t[0]))
-        # field_lines = ',\n        '.join(
-        #     [
-        #         '{0}: {1}{2}'.format(
-        #             name, translate_to_python_field(field), '' if getattr(field, 'required', True) else ' = None'
-        #         ) for name, field in sorted_field_tuples
-        #     ]
-        # )
-        # field_names = ', '.join(sorted(f"'{name}'" for name in fields_map))
-        # assignments = '\n        '.join(f'self.{name} = {name}' for name, field in sorted_field_tuples)
-        # code = f'''
-        # class {class_name}:
-        #     __slots__ = [{field_names}]
-        #     def __init__(
-        #         self,
-        #         {field_lines}
-        #         ) -> None:
-        #         {assignments}
-        # '''
-        # return format_python_code(code)
+        init_args = ",\n        ".join(
+            [
+                f"{field.name}: {field.to_python_type()}"
+                for field in self.fields
+            ]
+        )
+        field_names = ', '.join(f"'{field.name}'" for field in self.fields)
+        assignments = "\n        ".join(
+            f"self.{field.name} = {field.name}" for field in self.fields
+        )
+        code = f"""
+class {self.name}:
+    __slots__ = [{field_names}]
+    def __init__(
+        self,
+        {init_args},
+        ) -> None:
+
+        {assignments}
+        """
+        return format_python_code(code)
