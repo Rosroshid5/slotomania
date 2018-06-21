@@ -11,11 +11,12 @@ from unittest import TestCase
 
 class SlotoTestCase(TestCase):
     def test_contract(self) -> None:
-        head = Contract(fields=[PF("hair", P.STRING)])
-        eye = Contract(fields=[PF("color", P.STRING)])
+        head = Contract("head", fields=[PF("hair", P.STRING)])
+        eye = Contract("eye", fields=[PF("color", P.STRING)])
         contract = Contract(
+            "body",
             fields=[
-                ListField("eyes", eye),
+                ListField("eyes", NestedField("eye", eye)),
                 PF("nose", P.INTEGER),
                 PF("mouth", P.DECIMAL),
                 PF("poo", P.FLOAT),

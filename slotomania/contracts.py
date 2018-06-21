@@ -12,6 +12,16 @@ class PrimitiveValueType(Enum):
     DECIMAL = auto()
     FLOAT = auto()
     DATETIME = auto()
+
+    def to_python_type(self):
+        return {
+            "STRING": 'str',
+            "INTEGER": 'int',
+            "DECIMAL": 'decimal.Decimal',
+            "FLOAT": 'float',
+            "DATETIME": 'datetime.datetime',
+        }[self.name]
+
     # Nested
     # DICT = auto()
     # LIST = auto()
@@ -57,6 +67,9 @@ class PrimitiveField(Sloto):
         self.name = name
         self.value_type = value_type
 
+    def to_python_type(self) -> str:
+        return self.value_type.to_python_type()
+
 
 class NestedField(Sloto):
     __slots__ = ["name", "sub_contract"]
@@ -66,6 +79,9 @@ class NestedField(Sloto):
         self.name = name
         self.sub_contract = sub_contract
 
+    def to_python_type(self) -> str:
+        return self.sub_contract.name
+
 
 class ListField(Sloto):
     __slots__ = ["name", "item_type"]
@@ -73,12 +89,15 @@ class ListField(Sloto):
     def __init__(
         self,
         name: str,
-        item_type: Union["Contract", PrimitiveValueType],
+        item_type: Union[NestedField, PrimitiveValueType],
     ) -> None:
-        assert isinstance(item_type, Contract
+        assert isinstance(item_type, NestedField
                           ) or isinstance(item_type, PrimitiveValueType)
         self.name = name
         self.item_type = item_type
+
+    def to_python_type(self) -> str:
+        return f"typing.List[{self.item_type.to_python_type()}]"
 
 
 class Contract(Sloto):
@@ -86,6 +105,12 @@ class Contract(Sloto):
 
     def __init__(
         self,
+        name: str,
         fields: List[FieldTypes],
     ) -> None:
+        self.name = name
         self.fields = fields
+
+    def translate_to_slots(self) -> str:
+        for f in self.fields:
+            print(f.to_python_type())
