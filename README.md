@@ -6,6 +6,8 @@ Examples
 ========
 
 ```Python
-from slotomania import Contract
-my_contract = Contract(fields=[])
+from slotomania import Contract, Field
+my_contract = Contract(fields=[Field(
+    type="string"
+)])
 ```

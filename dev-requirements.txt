@@ -3,7 +3,8 @@ wheel
 mypy
 twine
 yapf
-marshmallow>=3.0.0b8
+pytest
+# marshmallow>=3.0.0b8
 
 m2r==0.1.14
 
