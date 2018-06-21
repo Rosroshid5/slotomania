@@ -12,20 +12,20 @@ from unittest import TestCase
 
 class SlotoTestCase(TestCase):
     def test_contract(self) -> None:
-        head = Contract("Head", fields=[PF("hair", P.STRING)])
-        eye = Contract("Eye", fields=[PF("color", P.STRING)])
-        contract = Contract(
+        Head = Contract("Head", fields=[PF("hair", P.STRING)])
+        Eye = Contract("Eye", fields=[PF("color", P.STRING)])
+        Body = Contract(
             "Body",
             fields=[
-                ListField("eyes", NestedField("eye", eye)),
+                ListField("eyes", NestedField("eye", Eye)),
                 PF("nose", P.INTEGER),
                 PF("mouth", P.DECIMAL),
                 PF("poo", P.FLOAT),
                 PF("foot", P.DATETIME),
-                NestedField("head", head),
+                NestedField("head", Head),
             ]
         )
-        assert contract.translate_to_slots() == format_python_code(
+        assert Body.translate_to_slots() == format_python_code(
             """
 import datetime
 import decimal
