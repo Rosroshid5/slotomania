@@ -2,6 +2,8 @@ import pprint
 from enum import Enum, auto
 from typing import List, Union, ClassVar
 
+FieldTypes = Union["PrimitiveField", "NestedField", "ListField"]
+
 
 class PrimitiveValueType(Enum):
     # Primitive
@@ -63,11 +65,23 @@ class NestedField(Sloto):
         self.sub_contract = sub_contract
 
 
+class ListField(Sloto):
+    __slots__ = ["name", "item_type"]
+
+    def __init__(
+        self,
+        name: str,
+        item_type: Union["Contract", PrimitiveValueType],
+    ) -> None:
+        self.name = name
+        self.item_type = item_type
+
+
 class Contract(Sloto):
     __slots__ = ["fields"]
 
     def __init__(
         self,
-        fields: List[Union[PrimitiveField, NestedField]],
+        fields: List[FieldTypes],
     ) -> None:
         self.fields = fields

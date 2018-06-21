@@ -1,5 +1,9 @@
 from slotomania.contracts import (
-    Contract, PrimitiveField as PF, PrimitiveValueType as P, NestedField
+    Contract,
+    PrimitiveField as PF,
+    PrimitiveValueType as P,
+    NestedField,
+    ListField,
 )
 
 from unittest import TestCase
@@ -10,7 +14,7 @@ class SlotoTestCase(TestCase):
         head = Contract(fields=[PF("hair", P.STRING)])
         contract = Contract(
             fields=[
-                PF("eye", P.STRING),
+                ListField("eyes", P.STRING),
                 PF("nose", P.INTEGER),
                 PF("mouth", P.DECIMAL),
                 PF("poo", P.FLOAT),
