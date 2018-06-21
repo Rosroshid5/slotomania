@@ -113,6 +113,8 @@ class Contract(Sloto):
         name: str,
         fields: List[FieldTypes],
     ) -> None:
+        assert name[0].isupper(
+        ), f"Invalid contract name '{name}'. Must start with an upper case letter"
         self.name = name
         self.fields = fields
 

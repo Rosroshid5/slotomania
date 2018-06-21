@@ -12,8 +12,8 @@ from unittest import TestCase
 
 class SlotoTestCase(TestCase):
     def test_contract(self) -> None:
-        head = Contract("head", fields=[PF("hair", P.STRING)])
-        eye = Contract("eye", fields=[PF("color", P.STRING)])
+        head = Contract("Head", fields=[PF("hair", P.STRING)])
+        eye = Contract("Eye", fields=[PF("color", P.STRING)])
         contract = Contract(
             "Body",
             fields=[
@@ -35,12 +35,12 @@ class Body:
     __slots__ = ['eyes', 'nose', 'mouth', 'poo', 'foot', 'head']
     def __init__(
         self,
-        eyes: typing.List[eye],
+        eyes: typing.List[Eye],
         nose: int,
         mouth: decimal.Decimal,
         poo: float,
         foot: datetime.datetime,
-        head: head,
+        head: Head,
     ) -> None:
 
         self.eyes = eyes
