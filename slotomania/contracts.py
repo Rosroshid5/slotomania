@@ -3,7 +3,7 @@ from enum import Enum, auto
 from typing import List, Union, ClassVar
 from yapf.yapflib.yapf_api import FormatCode
 
-FieldTypes = Union["PrimitiveField", "NestedField", "ListField"]
+TypeChoices = Union["PrimitiveValueType", "Contract", "ListField"]
 
 
 def format_python_code(code: str, style_config='setup.cfg'):
@@ -18,7 +18,7 @@ class PrimitiveValueType(Enum):
     FLOAT = auto()
     DATETIME = auto()
 
-    def to_python_type(self):
+    def to_python_type(self) -> str:
         return {
             "STRING": 'str',
             "INTEGER": 'int',
@@ -27,22 +27,14 @@ class PrimitiveValueType(Enum):
             "DATETIME": 'datetime.datetime',
         }[self.name]
 
-    # Nested
-    # DICT = auto()
-    # LIST = auto()
-
-    # Language.PYTHON: {
-    #     # marshmallow
-    #     'DateTime': 'datetime.datetime',
-    #     'String': 'str',
-    #     'Boolean': 'bool',
-    #     'Integer': 'int',
-    #     'Decimal': 'decimal.Decimal',
-    #     'Float': 'float',
-    #     'Dict': 'dict',
-    #     'List': lambda f: 'typing.List[{}]'.format(_get_field_type(f.container, Language.PYTHON)),
-    #     'Nested': lambda f: '{}'.format(_get_field_type(f.nested, Language.PYTHON)),
-    # },
+    def to_typescript(self) -> str:
+        return {
+            "STRING": 'string',
+            "INTEGER": 'number',
+            "DECIMAL": 'number',
+            "FLOAT": 'number',
+            "DATETIME": 'string',
+        }[self.name]
 
 
 class Sloto:
@@ -64,45 +56,42 @@ class Sloto:
         )
 
 
-class PrimitiveField(Sloto):
+class Field(Sloto):
     __slots__ = ["name", "value_type"]
-
-    def __init__(self, name: str, value_type: PrimitiveValueType) -> None:
-        assert isinstance(value_type, PrimitiveValueType)
-        self.name = name
-        self.value_type = value_type
-
-    def to_python_type(self) -> str:
-        return self.value_type.to_python_type()
-
-
-class NestedField(Sloto):
-    __slots__ = ["sub_contract"]
-
-    def __init__(self, name: str, sub_contract: "Contract") -> None:
-        assert isinstance(sub_contract, Contract)
-        self.name = name
-        self.sub_contract = sub_contract
-
-    def to_python_type(self) -> str:
-        return self.sub_contract.name
-
-
-class ListField(Sloto):
-    __slots__ = ["name", "item_type"]
 
     def __init__(
         self,
         name: str,
-        item_type: Union[NestedField, PrimitiveValueType],
+        value_type: Union[TypeChoices, List[TypeChoices]],
+        required: bool = True,
     ) -> None:
-        assert isinstance(item_type, NestedField
-                          ) or isinstance(item_type, PrimitiveValueType)
+        # assert isinstance(value_type,
+        #                   PrimitiveValueType) or isinstance(value_type, list)
         self.name = name
-        self.item_type = item_type
+        self.value_type = value_type
+        self.required = required
 
     def to_python_type(self) -> str:
-        return f"typing.List[{self.item_type.to_python_type()}]"
+        if isinstance(self.value_type, list):
+            return "typing.Union[{}]".format(
+                ",".join([t.to_python_type() for t in self.value_type])
+            )
+        return self.value_type.to_python_type()
+
+    def to_typescript(self) -> str:
+        if isinstance(self.value_type, list):
+            return "|".join([t.to_typescript() for t in self.value_type])
+        return self.value_type.to_typescript()
+
+
+class ListField(Field):
+    def to_python_type(self) -> str:
+        type_string = super().to_python_type()
+        return f"typing.List[{type_string}]"
+
+    def to_typescript(self) -> str:
+        type_string = super().to_typescript()
+        return f"Array<{type_string}>"
 
 
 class Contract(Sloto):
@@ -111,17 +100,38 @@ class Contract(Sloto):
     def __init__(
         self,
         name: str,
-        fields: List[FieldTypes],
+        fields: List[Field],
     ) -> None:
         assert name[0].isupper(
         ), f"Invalid contract name '{name}'. Must start with an upper case letter"
         self.name = name
-        self.fields = fields
+        # Required args come first
+        self.fields = sorted(fields, key=lambda f: (-f.required, f.name))
+
+    def to_python_type(self) -> str:
+        return self.name
+
+    def to_typescript(self) -> str:
+        return self.name
+
+    def translate_to_typescript(self) -> str:
+        interface_body = '\n'.join(
+            [
+                # field_name, optional, field_type
+                f"  {field.name}: {field.to_typescript()}" if field.required
+                else f"  {field.name}?: {field.to_typescript()}"
+                for field in self.fields
+            ]
+        )
+        return 'export interface {} {{\n{}\n}}'.format(
+            self.name, interface_body
+        )
 
     def translate_to_slots(self) -> str:
         init_args = ",\n        ".join(
             [
-                f"{field.name}: {field.to_python_type()}"
+                f"{field.name}: {field.to_python_type()}" if field.required
+                else f"{field.name}: {field.to_python_type()} = None"
                 for field in self.fields
             ]
         )
