@@ -1,3 +1,6 @@
+[![codecov](https://codecov.io/gh/conanfanli/slotomania/branch/master/graph/badge.svg)](https://codecov.io/gh/conanfanli/slotomania)
+![pyup](https://pyup.io/repos/github/conanfanli/slotomania/shield.svg)
+
 Slotomania
 ================
 A code generator that transforms schemas to Python slot classes and typescript interfaces
