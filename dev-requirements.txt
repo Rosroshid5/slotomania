@@ -5,7 +5,10 @@ twine
 yapf
 pytest
 pytest-cov
-# marshmallow>=3.0.0b8
+marshmallow>=3.0.0b8
+flake8
+codecov
+ipdb
 
 m2r==0.1.14
 

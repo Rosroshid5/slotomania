@@ -1,17 +1,34 @@
+from marshmallow import Schema, fields
 from slotomania.contracts import (
     Contract,
-    PrimitiveField,
     PrimitiveValueType as PVT,
     ListField,
-    NestedField,
-    UnionField,
     format_python_code,
+    PrimitiveField,
+    NestedField,
 )
+from slotomania.contrib.marshmallow_converter import schema_to_contract
 
 from unittest import TestCase
 
 
-class SlotoTestCase(TestCase):
+class Eye(Schema):
+    color = fields.String(required=True)
+
+
+class Head(Schema):
+    hair = fields.String(requried=True)
+
+
+class Body(Schema):
+    eyes = fields.List(fields.Nested(Eye()), required=True)
+    mouth = fields.Decimal(required=True)
+    poo = fields.Float(required=True)
+    foot = fields.DateTime(required=True)
+    head = fields.Nested(Head(), required=True)
+
+
+class Marshmallow(TestCase):
     def setUp(self):
         super().setUp()
         Head = Contract("Head", fields=[PrimitiveField("hair", PVT.STRING)])
@@ -20,15 +37,6 @@ class SlotoTestCase(TestCase):
             "Body",
             fields=[
                 ListField("eyes", NestedField("eyes", Eye)),
-                UnionField(
-                    "nose",
-                    value_types=[
-                        PrimitiveField("", PVT.INTEGER),
-                        NestedField("", Eye),
-                        ListField("temp", NestedField("temp", Head)),
-                    ],
-                    required=False
-                ),
                 PrimitiveField("mouth", PVT.DECIMAL),
                 PrimitiveField("poo", PVT.FLOAT),
                 PrimitiveField("foot", PVT.DATETIME),
@@ -36,15 +44,16 @@ class SlotoTestCase(TestCase):
             ]
         )
 
-    def test_contract_to_python(self) -> None:
-        assert self.Body.translate_to_slots() == format_python_code(
-            """
+    def test_schema_to_contract(self) -> None:
+        assert schema_to_contract(Body()
+                                  ).translate_to_slots() == format_python_code(
+                                      """
 import datetime
 import decimal
 import typing
 
 class Body:
-    __slots__ = ['eyes', 'foot', 'head', 'mouth', 'poo', 'nose']
+    __slots__ = ['eyes', 'foot', 'head', 'mouth', 'poo']
     def __init__(
         self,
         eyes: typing.List[Eye],
@@ -52,7 +61,6 @@ class Body:
         head: Head,
         mouth: decimal.Decimal,
         poo: float,
-        nose: typing.Union[int, Eye, typing.List[Head]] = None,
     ) -> None:
 
         self.eyes = eyes
@@ -60,18 +68,5 @@ class Body:
         self.head = head
         self.mouth = mouth
         self.poo = poo
-        self.nose = nose
         """
-        )
-
-    def test_contract_to_type_script(self) -> None:
-        assert self.Body.translate_to_typescript() == (
-            """export interface Body {
-  eyes: Array<Eye>
-  foot: string
-  head: Head
-  mouth: number
-  poo: number
-  nose?: number|Eye|Array<Head>
-}"""
-        )
+                                  )

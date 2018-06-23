@@ -1,12 +1,10 @@
 import pprint
 from enum import Enum, auto
-from typing import List, Union, ClassVar
+from typing import List, Union
 from yapf.yapflib.yapf_api import FormatCode
 
-TypeChoices = Union["PrimitiveValueType", "Contract", "ListField"]
 
-
-def format_python_code(code: str, style_config='setup.cfg'):
+def format_python_code(code: str, style_config='setup.cfg') -> str:
     return FormatCode(f'{code}')[0]
 
 
@@ -56,56 +54,120 @@ class Sloto:
         )
 
 
-class Field(Sloto):
-    __slots__ = ["name", "value_type"]
+class SlotoField(Sloto):
+    required: bool
+    name: str
+
+    def to_python_type(self) -> str:
+        raise NotImplementedError()
+
+    def to_typescript(self) -> str:
+        raise NotImplementedError()
+
+
+class PrimitiveField(SlotoField):
+    __slots__ = ["name", "value_type", "required"]
 
     def __init__(
         self,
         name: str,
-        value_type: Union[TypeChoices, List[TypeChoices]],
+        value_type: PrimitiveValueType,
         required: bool = True,
     ) -> None:
-        # assert isinstance(value_type,
-        #                   PrimitiveValueType) or isinstance(value_type, list)
+        assert isinstance(value_type, PrimitiveValueType)
         self.name = name
         self.value_type = value_type
         self.required = required
 
     def to_python_type(self) -> str:
-        if isinstance(self.value_type, list):
-            return "typing.Union[{}]".format(
-                ",".join([t.to_python_type() for t in self.value_type])
-            )
         return self.value_type.to_python_type()
 
     def to_typescript(self) -> str:
-        if isinstance(self.value_type, list):
-            return "|".join([t.to_typescript() for t in self.value_type])
         return self.value_type.to_typescript()
 
 
-class ListField(Field):
-    def to_python_type(self) -> str:
-        type_string = super().to_python_type()
-        return f"typing.List[{type_string}]"
-
-    def to_typescript(self) -> str:
-        type_string = super().to_typescript()
-        return f"Array<{type_string}>"
-
-
-class Contract(Sloto):
-    __slots__ = ["fields"]
+class NestedField(SlotoField):
+    __slots__ = ["name", "nested_contract", "required"]
 
     def __init__(
         self,
         name: str,
-        fields: List[Field],
+        nested_contract: "Contract",
+        required: bool = True,
+    ) -> None:
+        assert isinstance(
+            nested_contract, Contract
+        ), f"{nested_contract} is not a Contract"
+        self.name = name
+        self.nested_contract = nested_contract
+        self.required = required
+
+    def to_python_type(self) -> str:
+        return self.nested_contract.to_python_type()
+
+    def to_typescript(self) -> str:
+        return self.nested_contract.to_typescript()
+
+
+class UnionField(SlotoField):
+    __slots__ = ["name", "value_types", "required"]
+
+    def __init__(
+        self,
+        name: str,
+        value_types: List[Union["ListField", PrimitiveField, NestedField]],
+        required: bool = True,
+    ) -> None:
+        self.name = name
+        self.value_types = value_types
+        self.required = required
+
+    def to_python_type(self) -> str:
+        return "typing.Union[{}]".format(
+            ",".join([t.to_python_type() for t in self.value_types])
+        )
+
+    def to_typescript(self) -> str:
+        return "|".join([t.to_typescript() for t in self.value_types])
+
+
+class ListField(SlotoField):
+    __slots__ = ["name", "item_type", "required"]
+
+    def __init__(
+        self,
+        name: str,
+        item_type: SlotoField,
+        required: bool = True,
+    ) -> None:
+        self.name = name
+        self.item_type = item_type
+        self.required = required
+
+    def to_python_type(self) -> str:
+        type_string = self.item_type.to_python_type()
+        return f"typing.List[{type_string}]"
+
+    def to_typescript(self) -> str:
+        type_string = self.item_type.to_typescript()
+        return f"Array<{type_string}>"
+
+
+class Contract(Sloto):
+    __slots__ = ["name", "fields"]
+
+    def __init__(
+        self,
+        name: str,
+        fields: List[SlotoField],
     ) -> None:
         assert name[0].isupper(
-        ), f"Invalid contract name '{name}'. Must start with an upper case letter"
+        ), f"Invalid contract name '{name}'. Start with an upper case letter!"
         self.name = name
         # Required args come first
+        for field in fields:
+            pass
+            # assert isinstance(field, Field), field
         self.fields = sorted(fields, key=lambda f: (-f.required, f.name))
 
     def to_python_type(self) -> str:
