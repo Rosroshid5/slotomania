@@ -7,7 +7,10 @@ from slotomania.contracts import (
     PrimitiveField,
     NestedField,
 )
-from slotomania.contrib.marshmallow_converter import schema_to_contract
+from slotomania.contrib.marshmallow_converter import (
+    schema_to_contract,
+    schemas_to_slots,
+)
 
 from unittest import TestCase
 
@@ -45,9 +48,8 @@ class Marshmallow(TestCase):
         )
 
     def test_schema_to_contract(self) -> None:
-        assert schema_to_contract(Body()
-                                  ).translate_to_slots() == format_python_code(
-                                      """
+        assert schemas_to_slots([Body()]) == format_python_code(
+            """
 import datetime
 import decimal
 import typing
@@ -69,4 +71,4 @@ class Body:
         self.mouth = mouth
         self.poo = poo
         """
-                                  )
+        )

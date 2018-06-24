@@ -15,6 +15,7 @@ setup(
     version='0.0.1',
     description='Slotomania',
     long_description=long_description,
+    scripts=["bin/sloto.py"],
     url='https://github.com/conanfanli/slotomania',
     packages=find_packages(exclude=['tests*']),
     install_requires=['yapf>=0.21'],

@@ -37,8 +37,9 @@ class SlotoTestCase(TestCase):
         )
 
     def test_contract_to_python(self) -> None:
-        assert self.Body.translate_to_slots() == format_python_code(
-            """
+        assert self.Body.translate_to_slots(include_imports=True
+                                            ) == format_python_code(
+                                                """
 import datetime
 import decimal
 import typing
@@ -62,7 +63,7 @@ class Body:
         self.poo = poo
         self.nose = nose
         """
-        )
+                                            )
 
     def test_contract_to_type_script(self) -> None:
         assert self.Body.translate_to_typescript() == (

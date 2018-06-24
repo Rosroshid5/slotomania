@@ -189,7 +189,7 @@ class Contract(Sloto):
             self.name, interface_body
         )
 
-    def translate_to_slots(self) -> str:
+    def translate_to_slots(self, include_imports: bool = False) -> str:
         init_args = ",\n        ".join(
             [
                 f"{field.name}: {field.to_python_type()}" if field.required
@@ -201,11 +201,12 @@ class Contract(Sloto):
         assignments = "\n        ".join(
             f"self.{field.name} = {field.name}" for field in self.fields
         )
+        imports = (
+            "import datetime\nimport decimal\nimport typing\n\n"
+            if include_imports else ""
+        )
         code = f"""
-import datetime
-import decimal
-import typing
-
+{imports}
 class {self.name}:
     __slots__ = [{field_names}]
     def __init__(
