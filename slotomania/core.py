@@ -189,7 +189,12 @@ class Contract(Sloto):
             self.name, interface_body
         )
 
-    def translate_to_slots(self, include_imports: bool = False) -> str:
+    def translate_to_slots(
+        self,
+        include_imports: bool = False,
+        # dotted path to the class
+        base_class_path: str = 'slotomania.core.Sloto',
+    ) -> str:
         init_args = ",\n        ".join(
             [
                 f"{field.name}: {field.to_python_type()}" if field.required
@@ -201,19 +206,24 @@ class Contract(Sloto):
         assignments = "\n        ".join(
             f"self.{field.name} = {field.name}" for field in self.fields
         )
-        imports = (
+        default_imports = (
             "import datetime\nimport decimal\nimport typing\n\n"
-            if include_imports else ""
         )
+        if base_class_path != 'object':
+            module_path, base_class = base_class_path.rsplit('.', maxsplit=1)
+            imports = (
+                f'from {module_path} import {base_class}\n' + default_imports
+            )
+
+        imports = imports if include_imports else ""
         code = f"""
 {imports}
-class {self.name}:
+class {self.name}({base_class}):
     __slots__ = [{field_names}]
     def __init__(
         self,
         {init_args},
         ) -> None:
 
-        {assignments}
-        """
+        {assignments}"""
         return format_python_code(code)

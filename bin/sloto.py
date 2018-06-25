@@ -15,11 +15,26 @@ parser.add_argument(
     nargs='*',
     help='Dotted path to the module containing marshmallow schemas.'
 )
-args = parser.parse_args()
-for module in args.schema_modules:
-    importlib.import_module(module)
+parser.add_argument(
+    '-o', '--outputfile', type=str, nargs='?', help='Outputfile'
+)
 
-schemas = Schema.__subclasses__()
-assert len(schemas), "No schemas"
 
-print(schemas_to_slots([schema() for schema in schemas]))
+def main():
+    args = parser.parse_args()
+    for module in args.schema_modules:
+        importlib.import_module(module)
+
+    schemas = [s() for s in Schema.__subclasses__()]
+    assert len(schemas), "No schemas"
+
+    output = schemas_to_slots([schema for schema in schemas])
+    if not args.outputfile:
+        print(output)
+    else:
+        with open(args.outputfile, 'w') as f:
+            print(output, file=f)
+
+
+if __name__ == '__main__':
+    main()

@@ -9,50 +9,70 @@ Examples
 ========
 
 ```Python
-from slotomania.contracts import (
-    Contract,
-    PrimitiveField as PF,
-    PrimitiveValueType as P,
-    NestedField,
-    ListField,
-    format_python_code,
+from slotomania.contrib.marshmallow_converter import (
+    schemas_to_slots,
 )
-Head = Contract("Head", fields=[PF("hair", P.STRING)])
-Eye = Contract("Eye", fields=[PF("color", P.STRING)])
-Body = Contract(
-    "Body",
-    fields=[
-        ListField("eyes", NestedField("eye", Eye)),
-        PF("nose", P.INTEGER),
-        PF("mouth", P.DECIMAL),
-        PF("poo", P.FLOAT),
-        PF("foot", P.DATETIME),
-        NestedField("head", Head),
-    ]
-)
-assert Body.translate_to_slots() == format_python_code(
-"""
+class Eye(Schema):
+    color = fields.String(required=True)
+
+
+class Head(Schema):
+    hair = fields.String(requried=True)
+
+
+class Body(Schema):
+    eyes = fields.List(fields.Nested(Eye()), required=True)
+    mouth = fields.Decimal(required=True)
+    poo = fields.Float(required=True)
+    foot = fields.DateTime(required=True)
+    head = fields.Nested(Head(), required=True)
+
+assert format_python_code(schemas_to_slots([
+    Eye(),
+    Head(),
+    Body(),
+])) == format_python_code("""
+from slotomania.core import Sloto
 import datetime
 import decimal
 import typing
 
-class Body:
-    __slots__ = ['eyes', 'nose', 'mouth', 'poo', 'foot', 'head']
+class Eye(Sloto):
+    __slots__ = ['color']
+    def __init__(
+        self,
+        color: str,
+    ) -> None:
+
+        self.color = color
+
+
+class Head(Sloto):
+    __slots__ = ['hair']
+    def __init__(
+        self,
+        hair: str = None,
+    ) -> None:
+
+        self.hair = hair
+
+
+class Body(Sloto):
+    __slots__ = ['eyes', 'foot', 'head', 'mouth', 'poo']
     def __init__(
         self,
         eyes: typing.List[Eye],
-        nose: int,
-        mouth: decimal.Decimal,
-        poo: float,
         foot: datetime.datetime,
         head: Head,
+        mouth: decimal.Decimal,
+        poo: float,
     ) -> None:
 
         self.eyes = eyes
-        self.nose = nose
-        self.mouth = mouth
-        self.poo = poo
         self.foot = foot
         self.head = head
-"""
+        self.mouth = mouth
+        self.poo = poo
+        """
+        )
 ```

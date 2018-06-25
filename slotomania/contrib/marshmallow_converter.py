@@ -1,7 +1,7 @@
 from typing import List
 
 from marshmallow import Schema, fields
-from slotomania.contracts import (
+from slotomania.core import (
     PrimitiveValueType,
     Contract,
     ListField,
@@ -59,4 +59,4 @@ def schemas_to_slots(schemas: List[Schema]) -> str:
             contract.translate_to_slots(include_imports=(index == 0))
         )
 
-    return "\n".join(blocks)
+    return "\n\n".join(blocks)

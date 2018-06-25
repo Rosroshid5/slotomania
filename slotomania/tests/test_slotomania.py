@@ -1,4 +1,4 @@
-from slotomania.contracts import (
+from slotomania.core import (
     Contract,
     PrimitiveField,
     PrimitiveValueType as PVT,
@@ -40,11 +40,12 @@ class SlotoTestCase(TestCase):
         assert self.Body.translate_to_slots(include_imports=True
                                             ) == format_python_code(
                                                 """
+from slotomania.core import Sloto
 import datetime
 import decimal
 import typing
 
-class Body:
+class Body(Sloto):
     __slots__ = ['eyes', 'foot', 'head', 'mouth', 'poo', 'nose']
     def __init__(
         self,

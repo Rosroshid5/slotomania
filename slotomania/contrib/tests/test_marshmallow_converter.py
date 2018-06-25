@@ -1,5 +1,5 @@
 from marshmallow import Schema, fields
-from slotomania.contracts import (
+from slotomania.core import (
     Contract,
     PrimitiveValueType as PVT,
     ListField,
@@ -8,7 +8,6 @@ from slotomania.contracts import (
     NestedField,
 )
 from slotomania.contrib.marshmallow_converter import (
-    schema_to_contract,
     schemas_to_slots,
 )
 
@@ -48,13 +47,38 @@ class Marshmallow(TestCase):
         )
 
     def test_schema_to_contract(self) -> None:
-        assert schemas_to_slots([Body()]) == format_python_code(
+        assert format_python_code(schemas_to_slots([
+            Eye(),
+            Head(),
+            Body(),
+        ])) == format_python_code(
             """
+from slotomania.core import Sloto
 import datetime
 import decimal
 import typing
 
-class Body:
+class Eye(Sloto):
+    __slots__ = ['color']
+    def __init__(
+        self,
+        color: str,
+    ) -> None:
+
+        self.color = color
+
+
+class Head(Sloto):
+    __slots__ = ['hair']
+    def __init__(
+        self,
+        hair: str = None,
+    ) -> None:
+
+        self.hair = hair
+
+
+class Body(Sloto):
     __slots__ = ['eyes', 'foot', 'head', 'mouth', 'poo']
     def __init__(
         self,
