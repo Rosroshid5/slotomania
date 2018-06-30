@@ -12,7 +12,7 @@ with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
 
 setup(
     name='slotomania',
-    version='0.0.2',
+    version='0.0.6',
     description='Slotomania',
     long_description=long_description,
     scripts=["bin/sloto.py"],

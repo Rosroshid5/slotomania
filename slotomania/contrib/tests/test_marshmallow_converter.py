@@ -8,10 +8,14 @@ from slotomania.core import (
     NestedField,
 )
 from slotomania.contrib.marshmallow_converter import (
-    schemas_to_slots,
+    schemas_to_slots, schemas_to_typescript, RequestBodySchema
 )
 
 from unittest import TestCase
+
+
+class LoginRequest(RequestBodySchema):
+    redux_creator_function_name = "Login"
 
 
 class Eye(Schema):
@@ -45,6 +49,25 @@ class Marshmallow(TestCase):
                 NestedField("head", Head),
             ]
         )
+
+    def test_schemas_to_typescript(self) -> None:
+        assert schemas_to_typescript(
+            schemas=[LoginRequest()]
+        ) == """import * as slotoUtils from "./slotoUtils"
+
+export interface LoginRequest {
+
+}
+
+export function Login(requestBody: LoginRequest): any {
+    return (dispatch) => {
+        return dispatch(
+            slotoUtils.callEndpoint("Login", requestBody, )
+        )
+    }
+}
+
+export const SLOTO_ACTION_CREATORS = { Login }"""
 
     def test_schema_to_contract(self) -> None:
         assert format_python_code(schemas_to_slots([

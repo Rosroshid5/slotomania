@@ -5,7 +5,10 @@ from yapf.yapflib.yapf_api import FormatCode
 
 
 def format_python_code(code: str, style_config='setup.cfg') -> str:
-    return FormatCode(f'{code}')[0]
+    try:
+        return FormatCode(f'{code}')[0]
+    except SyntaxError as e:
+        raise SyntaxError(code)
 
 
 class PrimitiveValueType(Enum):
@@ -38,19 +41,19 @@ class PrimitiveValueType(Enum):
 class Sloto:
     __slots__: List[str]
 
-    def _sloto_to_dict(self) -> dict:
+    def sloto_to_dict(self) -> dict:
         ret = {}
         for field in self.__slots__:
             value = getattr(self, field)
-            if hasattr(value, "_sloto_to_dict"):
-                ret[field] = value._sloto_to_dict()
+            if hasattr(value, "sloto_to_dict"):
+                ret[field] = value.sloto_to_dict()
             else:
                 ret[field] = value
         return ret
 
     def __repr__(self) -> str:
         return "{}({})".format(
-            self.__class__.__name__, pprint.pformat(self._sloto_to_dict())
+            self.__class__.__name__, pprint.pformat(self.sloto_to_dict())
         )
 
 

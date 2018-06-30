@@ -7,3 +7,7 @@ publish:
 .PHONY: test
 test:
 	pytest $(filter-out $@,$(MAKECMDGOALS))
+
+.PHONY: setup
+setup:
+	rm -rf .git/hooks && ln -s $(shell pwd)/git-hooks .git/hooks
