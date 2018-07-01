@@ -18,6 +18,8 @@ class PrimitiveValueType(Enum):
     DECIMAL = auto()
     FLOAT = auto()
     DATETIME = auto()
+    BOOLEAN = auto()
+    DICT = auto()
 
     def to_python_type(self) -> str:
         return {
@@ -26,15 +28,19 @@ class PrimitiveValueType(Enum):
             "DECIMAL": 'decimal.Decimal',
             "FLOAT": 'float',
             "DATETIME": 'datetime.datetime',
+            "BOOLEAN": 'bool',
+            "DICT": 'dict',
         }[self.name]
 
     def to_typescript(self) -> str:
         return {
             "STRING": 'string',
+            "BOOLEAN": 'boolean',
             "INTEGER": 'number',
             "DECIMAL": 'number',
             "FLOAT": 'number',
             "DATETIME": 'string',
+            "DICT": '{}',
         }[self.name]
 
 
@@ -205,10 +211,12 @@ class Contract(Sloto):
                 for field in self.fields
             ]
         )
+        if init_args:
+            init_args += ','
         field_names = ', '.join(f"'{field.name}'" for field in self.fields)
         assignments = "\n        ".join(
             f"self.{field.name} = {field.name}" for field in self.fields
-        )
+        ) if field_names else "pass"
         default_imports = (
             "import datetime\nimport decimal\nimport typing\n\n"
         )
@@ -225,7 +233,7 @@ class {self.name}({base_class}):
     __slots__ = [{field_names}]
     def __init__(
         self,
-        {init_args},
+        {init_args}
         ) -> None:
 
         {assignments}"""

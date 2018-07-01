@@ -1,4 +1,4 @@
-from typing import List, Dict, ClassVar
+from typing import List, Dict
 
 from marshmallow import Schema, fields
 from slotomania.core import (
@@ -16,18 +16,9 @@ field_map = {
     fields.Decimal: PrimitiveValueType.DECIMAL,
     fields.Float: PrimitiveValueType.FLOAT,
     fields.DateTime: PrimitiveValueType.DATETIME,
+    fields.Boolean: PrimitiveValueType.BOOLEAN,
+    fields.Dict: PrimitiveValueType.DICT,
 }
-
-
-class RequestBodySchema(Schema):
-    redux_creator_function_name: ClassVar[str]
-
-    def __init_subclass__(cls, **kwargs) -> None:
-        super().__init_subclass__(**kwargs)
-        if not cls.redux_creator_function_name:
-            raise AssertionError(
-                f"{cls} need to define redux_creator_function_name"
-            )
 
 
 def field_to_field(name: str, field) -> SlotoField:
@@ -62,18 +53,26 @@ def schema_to_contract(schema: Schema) -> Contract:
     return Contract(schema.__class__.__name__, fields=ret)
 
 
-def schemas_to_typescript(schemas: List[Schema]) -> str:
+def schemas_to_typescript(
+    *,
+    interface_schemas: List[Schema],
+    redux_schemas: Dict[str, Schema],
+) -> str:
+    """
+    Args:
+        interface_schemas: A list of schemas to be converted to typescript
+    interfaces.
+        redux_schemas: A list of schemas to be converted to redux action
+    creators.
+    """
     blocks = ['import * as slotoUtils from "./slotoUtils"']
-    endpoints = {}
-    for index, schema in enumerate(schemas):
+    for index, schema in enumerate(interface_schemas):
         contract = schema_to_contract(schema)
         blocks.append(contract.translate_to_typescript())
-        if isinstance(schema, RequestBodySchema):
-            endpoints[schema.redux_creator_function_name] = schema
 
-    if endpoints:
-        blocks.append(get_redux_action_creators(endpoints))
-        names = ',\n'.join(endpoints.keys())
+    if redux_schemas:
+        blocks.append(get_redux_action_creators(redux_schemas))
+        names = ',\n'.join(redux_schemas.keys())
         blocks.append(
             f"""export const SLOTO_ACTION_CREATORS = {{ {names} }}"""
         )
@@ -92,9 +91,9 @@ def schemas_to_slots(schemas: List[Schema]) -> str:
     return "\n\n".join(blocks)
 
 
-def get_redux_action_creators(endpoints: Dict[str, Schema]) -> str:
+def get_redux_action_creators(redux_schemas: Dict[str, Schema]) -> str:
     blocks = []
-    for function_name, request_body_schema in endpoints.items():
+    for function_name, request_body_schema in redux_schemas.items():
         contract = schema_to_contract(request_body_schema)
         blocks.append(
             contract_to_redux_action_creator(
