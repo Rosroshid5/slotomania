@@ -1,12 +1,21 @@
 [![codecov](https://codecov.io/gh/conanfanli/slotomania/branch/master/graph/badge.svg)](https://codecov.io/gh/conanfanli/slotomania)
 ![pyup](https://pyup.io/repos/github/conanfanli/slotomania/shield.svg)
 
-Slotomania
-================
+# Slotomania
 A code generator that transforms schemas to Python slot classes and typescript interfaces
 
-Examples
-========
+# Vocabulary
+## slots
+Refer to Python slot classes. They're just like regular classes with `__slots__` defined.
+
+## Sloto
+A base class defined in [slotomania/core.py](./slotomania.core.py).
+Provides two methods: `sloto_to_dict()` which converts the instance to a dictionary, and `__repr__` for debugging purpose.
+
+## actions or redux actions
+Redux actions or action creators: see https://redux.js.org/basics/actions
+
+# Examples
 
 ```Python
 from slotomania.contrib.marshmallow_converter import (
@@ -76,3 +85,7 @@ class Body(Sloto):
         """
         )
 ```
+
+# Setup for development
+- Run `make setup` this will create git pre-commit hooks that converts this markdown to reStructured text which is needed for PyPI
+- Install packages in [dev-requirements.txt](./dev-requirements.txt)

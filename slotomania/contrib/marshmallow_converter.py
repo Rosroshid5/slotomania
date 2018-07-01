@@ -1,4 +1,4 @@
-from typing import List, Dict
+from typing import List, NamedTuple
 
 from marshmallow import Schema, fields
 from slotomania.core import (
@@ -19,6 +19,13 @@ field_map = {
     fields.Boolean: PrimitiveValueType.BOOLEAN,
     fields.Dict: PrimitiveValueType.DICT,
 }
+
+
+class ReduxAction(NamedTuple):
+    name: str
+    schema: Schema
+    pre_action: str = ""
+    callback: str = ""
 
 
 def field_to_field(name: str, field) -> SlotoField:
@@ -56,13 +63,13 @@ def schema_to_contract(schema: Schema) -> Contract:
 def schemas_to_typescript(
     *,
     interface_schemas: List[Schema],
-    redux_schemas: Dict[str, Schema],
+    redux_actions: List[ReduxAction],
 ) -> str:
     """
     Args:
         interface_schemas: A list of schemas to be converted to typescript
     interfaces.
-        redux_schemas: A list of schemas to be converted to redux action
+        redux_actions: A list of ReduxAction to be converted to typescript
     creators.
     """
     blocks = ['import * as slotoUtils from "./slotoUtils"']
@@ -70,9 +77,9 @@ def schemas_to_typescript(
         contract = schema_to_contract(schema)
         blocks.append(contract.translate_to_typescript())
 
-    if redux_schemas:
-        blocks.append(get_redux_action_creators(redux_schemas))
-        names = ',\n'.join(redux_schemas.keys())
+    if redux_actions:
+        blocks.append(write_redux_actions(redux_actions))
+        names = ',\n'.join([action.name for action in redux_actions])
         blocks.append(
             f"""export const SLOTO_ACTION_CREATORS = {{ {names} }}"""
         )
@@ -91,13 +98,16 @@ def schemas_to_slots(schemas: List[Schema]) -> str:
     return "\n\n".join(blocks)
 
 
-def get_redux_action_creators(redux_schemas: Dict[str, Schema]) -> str:
+def write_redux_actions(redux_actions: List[ReduxAction]) -> str:
     blocks = []
-    for function_name, request_body_schema in redux_schemas.items():
-        contract = schema_to_contract(request_body_schema)
+    for redux_action in redux_actions:
+        contract = schema_to_contract(redux_action.schema)
         blocks.append(
             contract_to_redux_action_creator(
-                contract=contract, function_name=function_name
+                contract=contract,
+                function_name=redux_action.name,
+                pre_action=redux_action.pre_action,
+                callback=redux_action.callback,
             )
         )
 

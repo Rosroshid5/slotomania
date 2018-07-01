@@ -8,7 +8,7 @@ from slotomania.core import (
     NestedField,
 )
 from slotomania.contrib.marshmallow_converter import (
-    schemas_to_slots, schemas_to_typescript
+    schemas_to_slots, schemas_to_typescript, ReduxAction
 )
 
 from unittest import TestCase
@@ -53,7 +53,13 @@ class Marshmallow(TestCase):
     def test_schemas_to_typescript(self) -> None:
         assert schemas_to_typescript(
             interface_schemas=[LoginRequest()],
-            redux_schemas={"Login": LoginRequest()},
+            redux_actions=[
+                ReduxAction(
+                    name="Login",
+                    schema=LoginRequest(),
+                    pre_action="console.log(1)"
+                )
+            ],
         ) == """import * as slotoUtils from "./slotoUtils"
 
 export interface LoginRequest {
@@ -61,7 +67,7 @@ export interface LoginRequest {
 }
 
 export function Login(requestBody: LoginRequest): any {
-    return (dispatch) => {
+    return (dispatch) => {console.log(1)
         return dispatch(
             slotoUtils.callEndpoint("Login", requestBody, )
         )
