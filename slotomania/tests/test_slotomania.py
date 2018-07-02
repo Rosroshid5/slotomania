@@ -30,12 +30,14 @@ class Woman(Sloto):
 
 
 class Man(Sloto):
-    __slots__ = ["name", "wife", "kids"]
+    __slots__ = ["name", "wife", "kids", "extra"]
 
-    def __init__(self, name: str, wife: Woman, kids: List[Kid]) -> None:
+    def __init__(self, name: str, wife: Woman, kids: List[Kid],
+                 extra: dict) -> None:
         self.name = name
         self.wife = wife
         self.kids = kids
+        self.extra = extra
 
 
 class SlotoTestCase(TestCase):
@@ -66,6 +68,9 @@ class SlotoTestCase(TestCase):
     def test_nested_sloto_from_dict(self) -> None:
         data = {
             "name": "man",
+            "extra": {
+                "key": "value"
+            },
             "wife": {
                 "name": "woman",
                 "shoes": ["green", "red"]
