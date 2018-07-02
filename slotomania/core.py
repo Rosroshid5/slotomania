@@ -1,6 +1,7 @@
+import decimal
 import pprint
 from enum import Enum, auto
-from typing import List, Union
+from typing import List, Union, TypeVar, Type
 from yapf.yapflib.yapf_api import FormatCode
 
 
@@ -44,17 +45,51 @@ class PrimitiveValueType(Enum):
         }[self.name]
 
 
+T = TypeVar("T", bound="Sloto")
+
+
 class Sloto:
     __slots__: List[str]
 
+    @classmethod
+    def sloto_from_dict(cls: Type[T], data: dict) -> T:
+        kwargs = {}
+        annotation = cls.__init__.__annotations__
+        PRIMITIVES = [str, int, bool, decimal.Decimal, float]
+
+        def convert_value(value, value_type):
+            if value_type in PRIMITIVES:
+                return value
+            elif issubclass(value_type, Sloto):
+                return value_type.sloto_from_dict(value)
+            elif value_type.__origin__ == List:
+                # e.g. List[OtherSloto]
+                nested_type = value_type.__args__[0]
+                return [convert_value(item, nested_type) for item in value]
+            else:
+                raise Exception(key)
+
+        for key in data:
+            if key in cls.__slots__:
+                arg_type = annotation[key]
+                kwargs[key] = convert_value(data[key], arg_type)
+
+        return cls(**kwargs)  # type: ignore
+
     def sloto_to_dict(self) -> dict:
         ret = {}
+
+        def dictify_value(value):
+            if hasattr(value, "sloto_to_dict"):
+                return value.sloto_to_dict()
+            elif isinstance(value, list):
+                return [dictify_value(item) for item in value]
+            else:
+                return value
+
         for field in self.__slots__:
             value = getattr(self, field)
-            if hasattr(value, "sloto_to_dict"):
-                ret[field] = value.sloto_to_dict()
-            else:
-                ret[field] = value
+            ret[field] = dictify_value(value)
         return ret
 
     def __repr__(self) -> str:

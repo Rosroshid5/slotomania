@@ -1,3 +1,5 @@
+from typing import List
+
 from slotomania.core import (
     Contract,
     PrimitiveField,
@@ -6,9 +8,34 @@ from slotomania.core import (
     NestedField,
     UnionField,
     format_python_code,
+    Sloto,
 )
 
 from unittest import TestCase
+
+
+class Kid(Sloto):
+    __slots__ = ["name"]
+
+    def __init__(self, name: str) -> None:
+        self.name = name
+
+
+class Woman(Sloto):
+    __slots__ = ["name", "shoes"]
+
+    def __init__(self, name: str, shoes: List[str]) -> None:
+        self.name = name
+        self.shoes = shoes
+
+
+class Man(Sloto):
+    __slots__ = ["name", "wife", "kids"]
+
+    def __init__(self, name: str, wife: Woman, kids: List[Kid]) -> None:
+        self.name = name
+        self.wife = wife
+        self.kids = kids
 
 
 class SlotoTestCase(TestCase):
@@ -35,6 +62,27 @@ class SlotoTestCase(TestCase):
                 NestedField("head", Head),
             ]
         )
+
+    def test_nested_sloto_from_dict(self) -> None:
+        data = {
+            "name": "man",
+            "wife": {
+                "name": "woman",
+                "shoes": ["green", "red"]
+            },
+            "kids": [{
+                "name": "biggie"
+            }, {
+                "name": "tiny"
+            }]
+        }
+        man = Man.sloto_from_dict(data)
+        assert man.wife.name == "woman"
+        assert man.wife.shoes == ["green", "red"]
+        assert man.kids[0].name == "biggie"
+        assert man.kids[1].name == "tiny"
+
+        assert man.sloto_to_dict() == data
 
     def test_contract_to_python(self) -> None:
         assert self.Body.translate_to_slots(include_imports=True
