@@ -55,7 +55,7 @@ class Sloto:
     def sloto_from_dict(cls: Type[T], data: dict) -> T:
         kwargs = {}
         annotation = cls.__init__.__annotations__
-        PRIMITIVES = [str, int, bool, decimal.Decimal, float]
+        PRIMITIVES = [str, int, bool, decimal.Decimal, float, dict]
 
         def convert_value(value, value_type):
             if value_type in PRIMITIVES:
