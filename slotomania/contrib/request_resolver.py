@@ -10,7 +10,8 @@ class RequestResolver:
     pre_action: ClassVar[str] = ""
     callback: ClassVar[str] = ""
 
-    def __init__(self, data: dict) -> None:
+    def __init__(self, request, data: dict) -> None:
+        self.request = request
         self._data = data
         sloto_klass = self.get_data_type()
         self.data = sloto_klass.sloto_from_dict(data)
