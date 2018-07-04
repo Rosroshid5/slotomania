@@ -25,8 +25,7 @@ class RequestResolver:
 
     def validate(self) -> dict:
         schema = self.get_schema()
-        self.validate_data = schema.load(self.request.data)
-        return self.validate_data
+        return schema.load(self.request.data)
 
     @classmethod
     def get_data_type(cls) -> Type[Sloto]:
