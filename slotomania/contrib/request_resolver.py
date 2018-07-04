@@ -14,7 +14,7 @@ class RequestResolver:
         self.request = request
         self._data = data
         sloto_klass = self.get_data_type()
-        self.data = sloto_klass.sloto_from_dict(data)
+        self.data = sloto_klass.sloto_from_dict(self.validate())
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
@@ -22,6 +22,11 @@ class RequestResolver:
             assert cls.__annotations__.get(
                 "data"
             ), f"{cls} cannot define 'resovle' without annotating 'data'"
+
+    def validate(self) -> dict:
+        schema = self.get_schema()
+        self.validate_data = schema.load(self.request.data)
+        return self.validate_data
 
     @classmethod
     def get_data_type(cls) -> Type[Sloto]:
