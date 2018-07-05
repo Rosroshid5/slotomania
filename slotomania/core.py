@@ -3,6 +3,7 @@ import pprint
 from enum import Enum, auto
 from typing import List, Union, TypeVar, Type
 from yapf.yapflib.yapf_api import FormatCode
+import json
 
 
 def format_python_code(code: str, style_config='setup.cfg') -> str:
@@ -48,6 +49,13 @@ class PrimitiveValueType(Enum):
 T = TypeVar("T", bound="Sloto")
 
 
+class SlotoEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, Sloto):
+            return {key: getattr(obj, key) for key in obj.__slots__}
+        return json.JSONEncoder.default(self.obj)
+
+
 class Sloto:
     __slots__: List[str]
 
@@ -77,20 +85,23 @@ class Sloto:
         return cls(**kwargs)  # type: ignore
 
     def sloto_to_dict(self) -> dict:
-        ret = {}
+        return json.loads(json.dumps(self, cls=SlotoEncoder))
 
-        def dictify_value(value):
-            if hasattr(value, "sloto_to_dict"):
-                return value.sloto_to_dict()
-            elif isinstance(value, list):
-                return [dictify_value(item) for item in value]
-            else:
-                return value
+    # def _deprecated_sloto_to_dict(self) -> dict:
+    #     ret = {}
 
-        for field in self.__slots__:
-            value = getattr(self, field)
-            ret[field] = dictify_value(value)
-        return ret
+    #     def dictify_value(value):
+    #         if hasattr(value, "sloto_to_dict"):
+    #             return value.sloto_to_dict()
+    #         elif isinstance(value, list):
+    #             return [dictify_value(item) for item in value]
+    #         else:
+    #             return value
+
+    #     for field in self.__slots__:
+    #         value = getattr(self, field)
+    #         ret[field] = dictify_value(value)
+    #     return ret
 
     def __repr__(self) -> str:
         return "{}({})".format(
