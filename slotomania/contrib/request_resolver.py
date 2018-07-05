@@ -14,7 +14,6 @@ class RequestResolver:
         self.request = request
         self._data = data
         sloto_klass = self.get_data_type()
-
         # Validate and create sloto data
         self.validate()
         self.data = sloto_klass.sloto_from_dict(self.validated_data)
