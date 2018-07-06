@@ -143,4 +143,4 @@ if __name__ == '__main__':
     main()
 ```
 Running the above script should create 2 files: "myproject/slots.py" and "src/sloto/index.ts".
-You will need to create a third file "src/slotoUtils.tx"
+You will need to create a third file "src/sloto/instructor.tx"

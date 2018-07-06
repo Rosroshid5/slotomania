@@ -60,7 +60,7 @@ class Marshmallow(TestCase):
                     pre_action="console.log(1)"
                 )
             ],
-        ) == """import * as slotoUtils from "./slotoUtils"
+        ) == """import * as instructor from "./instructor"
 
 export interface LoginRequest {
 
@@ -69,7 +69,7 @@ export interface LoginRequest {
 export function Login(requestBody: LoginRequest): any {
     return (dispatch) => {console.log(1)
         return dispatch(
-            slotoUtils.callEndpoint("Login", requestBody, )
+            instructor.callEndpoint("Login", requestBody, )
         )
     }
 }
