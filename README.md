@@ -89,3 +89,58 @@ class Body(Sloto):
 # Setup for development
 - Run `make setup` this will create git pre-commit hooks that converts this markdown to reStructured text which is needed for PyPI
 - Install packages in [dev-requirements.txt](./dev-requirements.txt)
+
+# Generate code
+Create a python script, say `sloto.py` to collect your schemas and feed them to Sloto's converters.
+The following example is based on a Django project:
+```pyton
+import django
+import os
+from marshmallow import Schema
+from myproject.api.schemas import RequestBodySchema
+from slotomania.contrib.marshmallow_converter import (
+    schemas_to_slots,
+    schemas_to_typescript,
+    ReduxAction,
+)
+
+
+def main() -> None:
+    os.environ.setdefault(
+        "DJANGO_SETTINGS_MODULE", "myproject.settings.deploy_settings"
+    )
+    django.setup()
+    # Here, assume Endpoints is a Enum where values are RequestResolver classes
+    from myproject.api.views import Endpoints
+
+    python_output_file = 'myproject/slots.py'
+    ts_output_file = 'src/sloto/index.ts'
+
+    # This is a quick way to collect Schema's immediate sub classes
+    schemas = [
+        Klass() for Klass in Schema.__subclasses__()
+    ]
+    python_code = schemas_to_slots(schemas)
+    with open(python_output_file, 'w') as f:
+        f.write(python_code)
+
+    ts_code = schemas_to_typescript(
+        interface_schemas=schemas,
+        redux_actions=[
+            ReduxAction(
+                name=name,
+                schema=endpoint.get_schema(),
+                pre_action=endpoint.pre_action,
+                callback=endpoint.callback,
+            ) for name, endpoint in Endpoints.get_endpoints().items()
+        ]
+    )
+    with open(ts_output_file, 'w') as f:
+        f.write(ts_code)
+
+
+if __name__ == '__main__':
+    main()
+```
+Running the above script should create 2 files: "myproject/slots.py" and "src/sloto/index.ts".
+You will need to create a third file "src/slotoUtils.tx"
