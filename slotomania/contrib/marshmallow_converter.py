@@ -72,7 +72,7 @@ def schemas_to_typescript(
         redux_actions: A list of ReduxAction to be converted to typescript
     creators.
     """
-    blocks = ['import * as slotoUtils from "./slotoUtils"']
+    blocks = ['import * as instructor from "./instructor"']
     for index, schema in enumerate(interface_schemas):
         contract = schema_to_contract(schema)
         blocks.append(contract.translate_to_typescript())
@@ -124,7 +124,7 @@ def contract_to_redux_action_creator(
     return f"""export function {function_name}(requestBody: {contract.name}): any {{
     return (dispatch) => {{{pre_action}
         return dispatch(
-            slotoUtils.callEndpoint("{function_name}", requestBody, {callback})
+            instructor.callEndpoint("{function_name}", requestBody, {callback})
         )
     }}
 }}"""
