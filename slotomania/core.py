@@ -1,7 +1,7 @@
 import decimal
 import pprint
 from enum import Enum, auto
-from typing import List, Union, TypeVar, Type
+from typing import List, Union, TypeVar, Type, Any
 from yapf.yapflib.yapf_api import FormatCode
 import json
 
@@ -50,10 +50,15 @@ T = TypeVar("T", bound="Sloto")
 
 
 class SlotoEncoder(json.JSONEncoder):
-    def default(self, obj):
+    def default(self, obj) -> Any:
         if isinstance(obj, Sloto):
             return {key: getattr(obj, key) for key in obj.__slots__}
-        return json.JSONEncoder.default(self.obj)
+        elif hasattr(obj, 'isoformat'):
+            return obj.isoformat()
+        elif isinstance(obj, decimal.Decimal):
+            return str(obj)
+
+        return json.JSONEncoder.default(self, obj)
 
 
 class Sloto:
