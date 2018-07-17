@@ -40,44 +40,33 @@ class Verbs(Enum):
     OVERWRITE = auto()
 
 
-class EntityTypes(Enum):
-    PorfolioRow = auto()
-    current_user = auto()
-    jwt_auth_token = auto()
-
-
 class Operation(NamedTuple):
     verb: Verbs
-    entity_type: EntityTypes
+    entity_type: Enum
     target_value: Union[list, dict]
 
     @classmethod
-    def MERGE_APPEND(
-        cls, entity_type: EntityTypes, target_value
-    ) -> 'Operation':
+    def MERGE_APPEND(cls, entity_type: Enum, target_value) -> 'Operation':
         assert isinstance(
             target_value, list
         ), f"'{target_value}' is not a list"
         return Operation(Verbs.MERGE_APPEND, entity_type, target_value)
 
     @classmethod
-    def MERGE_PREPEND(
-        cls, entity_type: EntityTypes, target_value
-    ) -> 'Operation':
+    def MERGE_PREPEND(cls, entity_type: Enum, target_value) -> 'Operation':
         assert isinstance(
             target_value, list
         ), f"'{target_value}' is not a list"
         return Operation(Verbs.MERGE_PREPEND, entity_type, target_value)
 
     @classmethod
-    def DELETE(cls, entity_type: EntityTypes,
+    def DELETE(cls, entity_type: Enum,
                target_value: Union[list, dict]) -> 'Operation':
         return Operation(Verbs.DELETE, entity_type, target_value)
 
     @classmethod
-    def OVERWRITE(
-        cls, entity_type: EntityTypes, target_value: Union[list, dict]
-    ) -> 'Operation':
+    def OVERWRITE(cls, entity_type: Enum,
+                  target_value: Union[list, dict]) -> 'Operation':
         return Operation(Verbs.OVERWRITE, entity_type, target_value)
 
 
