@@ -1,4 +1,4 @@
-from typing import Type, Dict
+from typing import Type, Dict, Any
 from django.db import transaction
 from django.http import HttpResponse
 # from rest_framework import response
@@ -13,11 +13,11 @@ class InstructorView(View):
     permission_classes: list = []
     routes: Dict[str, Type[RequestResolver]]
 
-    def get(self, request, endpoint: str = None):
+    def get(self, request: Any, endpoint: str = None) -> JsonResponse:
         return JsonResponse({})
 
     @transaction.atomic
-    def post(self, request, endpoint: str) -> JsonResponse:
+    def post(self, request: Any, endpoint: str) -> JsonResponse:
         """If mustate_state returns HttpResponse, return it."""
         resolver = self.routes[endpoint](request=request, data=request.data)
         response = resolver.resolve()
