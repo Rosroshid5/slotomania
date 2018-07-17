@@ -1,8 +1,6 @@
 from typing import Type, Dict, Any
 from django.db import transaction
 from django.http import HttpResponse
-# from rest_framework import response
-# from rest_framework.generics import GenericAPIView
 from django.http import JsonResponse
 from django.views import View
 
