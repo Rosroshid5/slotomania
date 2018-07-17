@@ -93,7 +93,7 @@ class Body(Sloto):
 # Generate code
 Create a python script, say `sloto.py` to collect your schemas and feed them to Sloto's converters.
 The following example is based on a Django project:
-```pyton
+```python
 import django
 import os
 from marshmallow import Schema
