@@ -1,3 +1,4 @@
+import json
 from enum import auto, Enum
 from typing import Type, Dict, Any, Union, NamedTuple, List
 
@@ -21,7 +22,7 @@ class InstructorView(View):
         self, request: Any, endpoint: str, *args, **kwargs
     ) -> JsonResponse:
         """If mustate_state returns HttpResponse, return it."""
-        request.data = request.POST.copy().dict()
+        request.data = json.loads(request.body)
         resolver = self.routes[endpoint](request=request, data=request.data)
         response = resolver.resolve()
         if isinstance(response, HttpResponse):
