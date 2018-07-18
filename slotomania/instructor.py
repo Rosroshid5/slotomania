@@ -17,8 +17,11 @@ class InstructorView(View):
         return JsonResponse({})
 
     @transaction.atomic
-    def post(self, request: Any, endpoint: str) -> JsonResponse:
+    def post(
+        self, request: Any, endpoint: str, *args, **kwargs
+    ) -> JsonResponse:
         """If mustate_state returns HttpResponse, return it."""
+        request.data = request.POST.copy().dict()
         resolver = self.routes[endpoint](request=request, data=request.data)
         response = resolver.resolve()
         if isinstance(response, HttpResponse):
