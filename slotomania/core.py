@@ -92,22 +92,6 @@ class Sloto:
     def sloto_to_dict(self) -> dict:
         return json.loads(json.dumps(self, cls=SlotoEncoder))
 
-    # def _deprecated_sloto_to_dict(self) -> dict:
-    #     ret = {}
-
-    #     def dictify_value(value):
-    #         if hasattr(value, "sloto_to_dict"):
-    #             return value.sloto_to_dict()
-    #         elif isinstance(value, list):
-    #             return [dictify_value(item) for item in value]
-    #         else:
-    #             return value
-
-    #     for field in self.__slots__:
-    #         value = getattr(self, field)
-    #         ret[field] = dictify_value(value)
-    #     return ret
-
     def __repr__(self) -> str:
         return "{}({})".format(
             self.__class__.__name__, pprint.pformat(self.sloto_to_dict())
