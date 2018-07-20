@@ -39,7 +39,7 @@ class PrimitiveValueType(Enum):
             "STRING": 'string',
             "BOOLEAN": 'boolean',
             "INTEGER": 'number',
-            "DECIMAL": 'number',
+            "DECIMAL": 'string',
             "FLOAT": 'number',
             "DATETIME": 'string',
             "DICT": '{}',
