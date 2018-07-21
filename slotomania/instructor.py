@@ -24,7 +24,10 @@ class InstructorView(View):
         """If mustate_state returns HttpResponse, return it."""
         request.data = json.loads(request.body)
         resolver = self.routes[endpoint](request=request, data=request.data)
+
+        resolver.authenticate()
         response = resolver.resolve()
+
         if isinstance(response, HttpResponse):
             return response
         elif hasattr(response, "sloto_to_dict"):

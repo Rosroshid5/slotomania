@@ -29,6 +29,9 @@ class RequestResolver:
         schema = self.get_schema()
         self.validated_data = schema.load(self.request.data)
 
+    def authenticate(self) -> None:
+        pass
+
     @classmethod
     def get_data_type(cls) -> Type[Sloto]:
         return cls.__annotations__["data"]
