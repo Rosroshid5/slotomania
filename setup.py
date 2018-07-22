@@ -12,7 +12,7 @@ with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
 
 setup(
     name='slotomania',
-    version='0.0.25',
+    version='0.0.37',
     description='Slotomania',
     long_description=long_description,
     scripts=["bin/sloto.py"],
@@ -24,7 +24,8 @@ setup(
     classifiers=[
         'Development Status :: 3 - Alpha',
         'License :: OSI Approved :: MIT License',
-        'Programming Language :: Python :: 3.6'
+        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
     ],
     keywords='slotomania',
     author='Conan Li',

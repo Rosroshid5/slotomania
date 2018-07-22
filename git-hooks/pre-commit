@@ -1,4 +1,5 @@
 #!/bin/sh
 m2r README.md --overwrite
+make sloto
 git add README.rst
 exit 0

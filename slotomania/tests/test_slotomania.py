@@ -81,7 +81,7 @@ class SlotoTestCase(TestCase):
                 "name": "tiny"
             }]
         }
-        man = Man.sloto_from_dict(data)
+        man = Man.load_from_dict(data)
         assert man.wife.name == "woman"
         assert man.wife.shoes == ["green", "red"]
         assert man.kids[0].name == "biggie"
@@ -125,7 +125,7 @@ class Body(Sloto):
   eyes: Array<Eye>
   foot: string
   head: Head
-  mouth: number
+  mouth: string
   poo: number
   nose?: number|Eye|Array<Head>
 }"""

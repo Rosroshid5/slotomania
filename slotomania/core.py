@@ -65,22 +65,25 @@ class Sloto:
     __slots__: List[str]
 
     @classmethod
-    def sloto_from_dict(cls: Type[T], data: dict) -> T:
+    def load_from_dict(cls: Type[T], data: dict) -> T:
         kwargs = {}
         annotation = cls.__init__.__annotations__
         PRIMITIVES = [str, int, bool, decimal.Decimal, float, dict]
 
         def convert_value(value, value_type):
+            print(value, value_type)
             if value_type in PRIMITIVES:
                 return value
-            elif issubclass(value_type, Sloto):
-                return value_type.sloto_from_dict(value)
-            elif value_type.__origin__ == List:
+            elif getattr(value_type, "__origin__", None) in (List, list):
                 # e.g. List[OtherSloto]
                 nested_type = value_type.__args__[0]
                 return [convert_value(item, nested_type) for item in value]
+            elif issubclass(value_type, Sloto):
+                return value_type.load_from_dict(value)
             else:
-                raise Exception(key)
+                raise Exception(
+                    f"not sure what to do with {value_type}: {value}"
+                )
 
         for key in data:
             if key in cls.__slots__:
