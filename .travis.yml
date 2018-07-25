@@ -1,0 +1,12 @@
+language: python
+sudo: enabled
+python:
+  - 3.6.5
+
+install:
+  - pip3 install -r dev-requirements.txt
+
+script:
+    - mypy .
+    - pytest . --cov
+    - codecov
