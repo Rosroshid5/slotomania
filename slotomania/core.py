@@ -1,58 +1,167 @@
+from dataclasses import MISSING, Field, asdict, dataclass, is_dataclass
+import datetime
 import decimal
-import pprint
+from decimal import Decimal
 from enum import Enum, auto
-from typing import List, Union, TypeVar, Type, Any
-from yapf.yapflib.yapf_api import FormatCode
 import json
+from typing import Any, Callable, ClassVar, Dict, List, Type, TypeVar, Union
+from typing import ForwardRef  # type: ignore
+
+from django.db import transaction
+from django.http import HttpResponse
+from django.http import JsonResponse as DjangoJsonResponse
+from django.views import View
+from marshmallow import class_registry
+
+from slotomania.exceptions import BadResolver, MissingField, UnknowFieldType
+
+T = TypeVar("T", bound="Contract")
 
 
-def format_python_code(code: str, style_config='setup.cfg') -> str:
-    try:
-        return FormatCode(f'{code}')[0]
-    except SyntaxError as e:
-        raise SyntaxError(code)
+class Undefined:
+    pass
 
 
-class PrimitiveValueType(Enum):
-    # Primitive
-    STRING = auto()
-    INTEGER = auto()
-    DECIMAL = auto()
-    FLOAT = auto()
-    DATETIME = auto()
-    BOOLEAN = auto()
-    DICT = auto()
-
-    def to_python_type(self) -> str:
-        return {
-            "STRING": 'str',
-            "INTEGER": 'int',
-            "DECIMAL": 'decimal.Decimal',
-            "FLOAT": 'float',
-            "DATETIME": 'datetime.datetime',
-            "BOOLEAN": 'bool',
-            "DICT": 'dict',
-        }[self.name]
-
-    def to_typescript(self) -> str:
-        return {
-            "STRING": 'string',
-            "BOOLEAN": 'boolean',
-            "INTEGER": 'number',
-            "DECIMAL": 'string',
-            "FLOAT": 'number',
-            "DATETIME": 'string',
-            "DICT": '{}',
-        }[self.name]
+class JsonResponse(DjangoJsonResponse):
+    def __init__(self, data, *args, **kwargs) -> None:
+        self.data = data
+        super().__init__(data, *args, **kwargs)
 
 
-T = TypeVar("T", bound="Sloto")
+class InstructorView(View):
+    permission_classes: list = []
+    routes: Dict[str, Type["RequestResolver"]]
+
+    def get(self, request: Any, endpoint: str = None) -> JsonResponse:
+        return JsonResponse({})
+
+    @transaction.atomic
+    def post(
+        self, request: Any, endpoint: str, *args, **kwargs
+    ) -> JsonResponse:
+        """If mustate_state returns HttpResponse, return it."""
+        request.data = json.loads(request.body)
+        resolver = self.routes[endpoint](request=request, data=request.data)
+
+        resolver.authenticate()
+        response = resolver.resolve()
+
+        if isinstance(response, HttpResponse):
+            return response
+        elif hasattr(response, "sloto_to_dict"):
+            return JsonResponse(response.sloto_to_dict())
+        elif isinstance(response, dict):
+            return JsonResponse(response)
+        elif hasattr(response, 'serialize'):
+            return JsonResponse(response.serialize())
+        else:
+            raise AssertionError('Unknow type: {}'.format(type(response)))
 
 
-class SlotoEncoder(json.JSONEncoder):
+class Verbs(Enum):
+    DELETE = auto()
+    MERGE_APPEND = auto()
+    MERGE_PREPEND = auto()
+    OVERWRITE = auto()
+
+
+@dataclass
+class Contract:
+    def asdict(self) -> dict:
+        return asdict(self)
+
+    @classmethod
+    def get_fields(cls: Type["Contract"]) -> Dict[str, Field]:
+        return getattr(cls, "__dataclass_fields__")
+
+    @classmethod
+    def to_typescript_interface(cls: Type["Contract"]) -> str:
+        interface_body = '\n'.join(
+            [
+                f"  {field.name}: {field_to_typescript(field)}"
+                if is_field_required(field) else
+                f"  {field.name}?: {field_to_typescript(field)}"
+                for name, field in cls.get_fields().items()
+            ]
+        )
+        return 'export interface {} {{\n{}\n}}'.format(
+            cls.__name__, interface_body
+        )
+
+    @classmethod
+    def load_from_dict(cls: Type[T], data: dict) -> T:
+        kwargs = {}
+        annotation = cls.__init__.__annotations__
+        PRIMITIVES = list(TYPE_MAP.keys())
+
+        def convert_value(value, value_type):
+            if value_type in PRIMITIVES:
+                return value
+            elif is_dataclass(value_type):
+                return value_type.load_from_dict(value)
+            elif getattr(value_type, "__origin__", None) == Union:
+                args = getattr(value_type, "__args__")
+                # TODO: natively chose first type in Union
+                return convert_value(value, args[0])
+            elif value_type.__origin__ == list:
+                # e.g. List[OtherSloto]
+                nested_type = value_type.__args__[0]
+                return [convert_value(item, nested_type) for item in value]
+            else:
+                raise Exception(
+                    f"not sure what to do with {value_type}: {value}"
+                )
+
+        for key in data:
+            if key in cls.get_fields():
+                arg_type = annotation[key]
+                kwargs[key] = convert_value(data[key], arg_type)
+
+        for name, field in cls.get_fields().items():
+            if is_field_required(field) and name not in data:
+                raise MissingField(field)
+
+        return cls(**kwargs)  # type: ignore
+
+
+@dataclass
+class Operation(Contract):
+    verb: Verbs
+    entity_type: Enum
+    target_value: Union[list, dict, str]
+
+    @classmethod
+    def MERGE_APPEND(cls, entity_type: Enum, target_value) -> 'Operation':
+        assert isinstance(
+            target_value, list
+        ), f"'{target_value}' is not a list"
+        return Operation(Verbs.MERGE_APPEND, entity_type, target_value)
+
+    @classmethod
+    def MERGE_PREPEND(cls, entity_type: Enum, target_value) -> 'Operation':
+        assert isinstance(
+            target_value, list
+        ), f"'{target_value}' is not a list"
+        return Operation(Verbs.MERGE_PREPEND, entity_type, target_value)
+
+    @classmethod
+    def DELETE(cls, entity_type: Enum,
+               target_value: Union[list, dict]) -> 'Operation':
+        return Operation(Verbs.DELETE, entity_type, target_value)
+
+    @classmethod
+    def OVERWRITE(
+        cls, entity_type: Enum, target_value: Union[list, dict, str]
+    ) -> 'Operation':
+        return Operation(Verbs.OVERWRITE, entity_type, target_value)
+
+
+class InstructionEncoder(json.JSONEncoder):
     def default(self, obj) -> Any:
-        if isinstance(obj, Sloto):
-            return {key: getattr(obj, key) for key in obj.__slots__}
+        if isinstance(obj, Enum):
+            return obj.name
+        elif is_dataclass(obj):
+            return asdict(obj)
         elif hasattr(obj, 'isoformat'):
             return obj.isoformat()
         elif isinstance(obj, decimal.Decimal):
@@ -61,218 +170,180 @@ class SlotoEncoder(json.JSONEncoder):
         return json.JSONEncoder.default(self, obj)
 
 
-class Sloto:
-    __slots__: List[str]
+@dataclass
+class Instruction(Contract):
+    operations: List[Operation]
+    errors: Any = None
+    redirect: str = ''
+
+    def serialize(self) -> dict:
+        return json.loads(json.dumps(self, cls=InstructionEncoder))
+
+
+class RequestResolver:
+    # data: MyDataType
+    resolve: Callable
+    pre_action: ClassVar[str] = ""
+    callback: ClassVar[str] = ""
+    use_jwt_authentication: ClassVar[bool] = True
+
+    def __init__(self, request, data: dict) -> None:
+        self.request = request
+        self._data = data
+        self.clean_request_data()
 
     @classmethod
-    def load_from_dict(cls: Type[T], data: dict) -> T:
-        kwargs = {}
-        annotation = cls.__init__.__annotations__
-        PRIMITIVES = [str, int, bool, decimal.Decimal, float, dict]
+    def get_schema(cls):
+        # TODO: deprecate schemas
+        contract_class = cls.__annotations__["data"]
+        try:
+            return class_registry.get_class(contract_class.__name__)()
+        except Exception:
+            return None
 
-        def convert_value(value, value_type):
-            print(value, value_type)
-            if value_type in PRIMITIVES:
-                return value
-            elif getattr(value_type, "__origin__", None) in (List, list):
-                # e.g. List[OtherSloto]
-                nested_type = value_type.__args__[0]
-                return [convert_value(item, nested_type) for item in value]
-            elif issubclass(value_type, Sloto):
-                return value_type.load_from_dict(value)
-            else:
-                raise Exception(
-                    f"not sure what to do with {value_type}: {value}"
+    def clean_request_data(self) -> None:
+        contract_class = self.__class__.__annotations__["data"]
+        if issubclass(contract_class, Contract):
+            self.data = contract_class.load_from_dict(self.request.data)
+        else:
+            raise Exception(f"Unknown type for `data` f{contract_class}")
+
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        if hasattr(cls, "resolve"):
+            assert cls.__annotations__.get(
+                "data"
+            ), f"{cls} cannot define 'resovle' without annotating 'data'"
+            if not cls.resolve.__annotations__:
+                raise BadResolver(
+                    f"{cls} must annotate resolve method if defined"
                 )
 
-        for key in data:
-            if key in cls.__slots__:
-                arg_type = annotation[key]
-                kwargs[key] = convert_value(data[key], arg_type)
+    def authenticate(self) -> None:
+        if not self.use_jwt_authentication:
+            return
 
-        return cls(**kwargs)  # type: ignore
-
-    def sloto_to_dict(self) -> dict:
-        return json.loads(json.dumps(self, cls=SlotoEncoder))
-
-    def __repr__(self) -> str:
-        return "{}({})".format(
-            self.__class__.__name__, pprint.pformat(self.sloto_to_dict())
-        )
+        from .contrib.jwt_auth import authenticate_request
+        authenticate_request(self.request)
 
 
-class SlotoField(Sloto):
-    required: bool
+class EntityTypes(Enum):
+    jwt_auth_token = auto()
+
+
+def is_field_required(field: Field) -> bool:
+    return field.default is MISSING
+
+
+TYPE_MAP = {
+    str: 'string',
+    bool: 'boolean',
+    int: 'number',
+    Decimal: 'string',
+    float: 'number',
+    datetime.datetime: 'string',
+    dict: '{}',
+    Any: 'any',
+    list: 'Array<any>',
+}
+
+
+def python_type_to_typescript(python_type: type) -> str:
+    if python_type in TYPE_MAP:
+        return TYPE_MAP[python_type]
+
+    if python_type is Undefined:
+        return "undefined"
+
+    if is_dataclass(python_type):
+        return python_type.__name__
+
+    if getattr(python_type, "__name__", None) == "NoneType":
+        return "null"
+
+    if getattr(python_type, "__origin__", None) in [list, List]:
+        args = getattr(python_type, "__args__")
+        return "Array<{}>".format(python_type_to_typescript(args[0]))
+
+    if getattr(python_type, "__origin__", None) == Union:
+        args = getattr(python_type, "__args__")
+        return "|".join(python_type_to_typescript(arg) for arg in args)
+
+    if isinstance(python_type, ForwardRef):
+        return python_type.__forward_arg__
+
+    if isinstance(python_type, type) and issubclass(python_type, Enum):
+        return python_type.__name__
+
+    raise UnknowFieldType(f"Unknow type {python_type}")
+
+
+def field_to_typescript(field: Field) -> str:
+    try:
+        return python_type_to_typescript(field.type)
+    except UnknowFieldType as e:
+        raise UnknowFieldType(f"{field.name}: {e}")
+
+
+@dataclass
+class ReduxAction(Contract):
     name: str
+    contract: Type[Contract]
+    pre_action: str = ""
+    callback: str = ""
 
-    def to_python_type(self) -> str:
-        raise NotImplementedError()
-
-    def to_typescript(self) -> str:
-        raise NotImplementedError()
-
-
-class PrimitiveField(SlotoField):
-    __slots__ = ["name", "value_type", "required"]
-
-    def __init__(
-        self,
-        name: str,
-        value_type: PrimitiveValueType,
-        required: bool = True,
-    ) -> None:
-        assert isinstance(value_type, PrimitiveValueType)
-        self.name = name
-        self.value_type = value_type
-        self.required = required
-
-    def to_python_type(self) -> str:
-        return self.value_type.to_python_type()
-
-    def to_typescript(self) -> str:
-        return self.value_type.to_typescript()
-
-
-class NestedField(SlotoField):
-    __slots__ = ["name", "nested_contract", "required"]
-
-    def __init__(
-        self,
-        name: str,
-        nested_contract: "Contract",
-        required: bool = True,
-    ) -> None:
-        assert isinstance(
-            nested_contract, Contract
-        ), f"{nested_contract} is not a Contract"
-        self.name = name
-        self.nested_contract = nested_contract
-        self.required = required
-
-    def to_python_type(self) -> str:
-        return self.nested_contract.to_python_type()
-
-    def to_typescript(self) -> str:
-        return self.nested_contract.to_typescript()
-
-
-class UnionField(SlotoField):
-    __slots__ = ["name", "value_types", "required"]
-
-    def __init__(
-        self,
-        name: str,
-        value_types: List[Union["ListField", PrimitiveField, NestedField]],
-        required: bool = True,
-    ) -> None:
-        self.name = name
-        self.value_types = value_types
-        self.required = required
-
-    def to_python_type(self) -> str:
-        return "typing.Union[{}]".format(
-            ",".join([t.to_python_type() for t in self.value_types])
-        )
-
-    def to_typescript(self) -> str:
-        return "|".join([t.to_typescript() for t in self.value_types])
-
-
-class ListField(SlotoField):
-    __slots__ = ["name", "item_type", "required"]
-
-    def __init__(
-        self,
-        name: str,
-        item_type: SlotoField,
-        required: bool = True,
-    ) -> None:
-        self.name = name
-        self.item_type = item_type
-        self.required = required
-
-    def to_python_type(self) -> str:
-        type_string = self.item_type.to_python_type()
-        return f"typing.List[{type_string}]"
-
-    def to_typescript(self) -> str:
-        type_string = self.item_type.to_typescript()
-        return f"Array<{type_string}>"
-
-
-class Contract(Sloto):
-    __slots__ = ["name", "fields"]
-
-    def __init__(
-        self,
-        name: str,
-        fields: List[SlotoField],
-    ) -> None:
-        assert name[0].isupper(
-        ), f"Invalid contract name '{name}'. Start with an upper case letter!"
-        self.name = name
-        # Required args come first
-        for field in fields:
-            pass
-            # assert isinstance(field, Field), field
-        self.fields = sorted(fields, key=lambda f: (-f.required, f.name))
-
-    def to_python_type(self) -> str:
-        return self.name
-
-    def to_typescript(self) -> str:
-        return self.name
-
-    def translate_to_typescript(self) -> str:
-        interface_body = '\n'.join(
-            [
-                # field_name, optional, field_type
-                f"  {field.name}: {field.to_typescript()}" if field.required
-                else f"  {field.name}?: {field.to_typescript()}"
-                for field in self.fields
-            ]
-        )
-        return 'export interface {} {{\n{}\n}}'.format(
-            self.name, interface_body
-        )
-
-    def translate_to_slots(
-        self,
-        include_imports: bool = False,
-        # dotted path to the class
-        base_class_path: str = 'slotomania.core.Sloto',
-    ) -> str:
-        init_args = ",\n        ".join(
-            [
-                f"{field.name}: {field.to_python_type()}" if field.required
-                else f"{field.name}: {field.to_python_type()} = None"
-                for field in self.fields
-            ]
-        )
-        if init_args:
-            init_args += ','
-        field_names = ', '.join(f"'{field.name}'" for field in self.fields)
-        assignments = "\n        ".join(
-            f"self.{field.name} = {field.name}" for field in self.fields
-        ) if field_names else "pass"
-        default_imports = (
-            "import datetime\nimport decimal\nimport typing\n\n"
-        )
-        if base_class_path != 'object':
-            module_path, base_class = base_class_path.rsplit('.', maxsplit=1)
-            imports = (
-                f'from {module_path} import {base_class}\n' + default_imports
+    def to_typescript_function(self):
+        return f"""export function {self.name}(requestBody: {self.contract.__name__}): any {{
+        return (dispatch) => {{{self.pre_action}
+            return dispatch(
+                plugins.callEndpoint("{self.name}", requestBody, {self.callback})
             )
+        }}
+    }}""" # NOQA
 
-        imports = imports if include_imports else ""
-        code = f"""
-{imports}
-class {self.name}({base_class}):
-    __slots__ = [{field_names}]
-    def __init__(
-        self,
-        {init_args}
-        ) -> None:
 
-        {assignments}"""
-        return format_python_code(code)
+def contract_to_redux_action_creator(
+    *,
+    contract: Type[Contract],
+    function_name: str,
+    callback='',
+    pre_action='',
+) -> str:
+    return f"""export function {function_name}(requestBody: {contract.__name__}): any {{
+    return (dispatch) => {{{pre_action}
+        return dispatch(
+            plugins.callEndpoint("{function_name}", requestBody, {callback})
+        )
+    }}
+}}"""
+
+
+def contracts_to_typescript(
+    *,
+    dataclasses: List[Type[Contract]],
+    redux_actions: List[ReduxAction],
+    import_plugins: bool = True,
+) -> str:
+    """
+    Args:
+        interface_schemas: A list of schemas to be converted to typescript
+    interfaces.
+        redux_actions: A list of ReduxAction to be converted to typescript
+    creators.
+    """
+    blocks = import_plugins and ['import * as plugins from "./plugins"'] or []
+    for index, contract in enumerate(dataclasses):
+        blocks.append(contract.to_typescript_interface())
+
+    if redux_actions:
+        blocks.append(
+            "\n\n".join(
+                action.to_typescript_function() for action in redux_actions
+            )
+        )
+        names = ',\n'.join([action.name for action in redux_actions])
+        blocks.append(
+            f"""export const SLOTO_ACTION_CREATORS = {{ {names} }}"""
+        )
+
+    return "\n\n".join(blocks)

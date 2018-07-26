@@ -1,5 +1,6 @@
 from dataclasses import dataclass
-from slotomania.contractor import Contract
+
+from slotomania.core import Contract
 
 
 @dataclass

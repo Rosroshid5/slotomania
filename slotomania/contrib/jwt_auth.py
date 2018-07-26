@@ -1,10 +1,18 @@
-from typing import Mapping, Any
-import jwt
-import uuid
 import datetime
-from django.conf import settings
-from django.contrib.auth import get_user_model
+from typing import Any, ClassVar, Mapping
+import uuid
 
+from django.conf import settings
+from django.contrib.auth import authenticate, get_user_model, login
+
+import jwt
+from slotomania.contrib.contracts import AuthenticateUserRequest
+from slotomania.core import (
+    EntityTypes,
+    Instruction,
+    Operation,
+    RequestResolver,
+)
 from slotomania.exceptions import NotAuthenticated
 
 
@@ -92,3 +100,25 @@ def jwt_payload_handler(user) -> dict:
 
     payload["username"] = username
     return payload
+
+
+class AuthenticateUser(RequestResolver):
+    """Login and InitApp."""
+    data: AuthenticateUserRequest
+    use_jwt_authentication: ClassVar[bool] = False
+
+    def resolve(self) -> Instruction:
+        username = self.data.username
+        password = self.data.password
+        user = authenticate(username=username, password=password)
+
+        if user:
+            login(self.request, user)
+
+            payload = jwt_payload_handler(user)
+            token = jwt_encode_handler(payload)
+            return Instruction(
+                [Operation.OVERWRITE(EntityTypes.jwt_auth_token, token)]
+            )
+
+        return Instruction(operations=[], errors='bad credential')

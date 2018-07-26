@@ -1,12 +1,9 @@
+from dataclasses import asdict, dataclass, is_dataclass
 import datetime
-from typing import Optional, List
+from typing import List, Optional
 from unittest import TestCase
-from dataclasses import dataclass, is_dataclass, asdict
-from slotomania.contractor import (
-    contracts_to_typescript,
-    Contract,
-    ReduxAction,
-)
+
+from slotomania.core import Contract, ReduxAction, contracts_to_typescript
 
 
 @dataclass
@@ -44,7 +41,7 @@ class DataclassConverterTestCase(TestCase):
 export function CreatePerson(requestBody: Person): any {
         return (dispatch) => {
             return dispatch(
-                instructor.callEndpoint("CreatePerson", requestBody, )
+                plugins.callEndpoint("CreatePerson", requestBody, )
             )
         }
     }

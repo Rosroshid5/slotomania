@@ -1,6 +1,7 @@
 from unittest import TestCase
-from slotomania.instructor import Instruction, Operation, EntityTypes
+
 from slotomania.contrib.contracts import AuthenticateUserRequest
+from slotomania.core import EntityTypes, Instruction, Operation
 
 
 class InstructorTestCase(TestCase):
@@ -13,7 +14,6 @@ class InstructorTestCase(TestCase):
                 )
             ]
         )
-        print(instruction.serialize())
         assert instruction.serialize() == {
             "errors":
             None,

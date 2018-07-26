@@ -2,7 +2,8 @@
 
 from codecs import open
 from os import path
-from setuptools import setup, find_packages
+
+from setuptools import find_packages, setup
 
 here = path.abspath(path.dirname(__file__))
 
@@ -12,10 +13,10 @@ with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
 
 setup(
     name='slotomania',
-    version='0.0.38',
+    version='0.0.39',
     description='Slotomania',
     long_description=long_description,
-    scripts=["bin/sloto.py", "bin/fix_sloto_stubs.py"],
+    scripts=["bin/fix_sloto_stubs.py"],
     url='https://github.com/conanfanli/slotomania',
     packages=find_packages(exclude=['tests*']),
     install_requires=['yapf>=0.21'],
