@@ -31,7 +31,6 @@ class ReturnHttpResponse(RequestResolver):
 
 
 class ReturnInstruction(RequestResolver):
-    use_jwt_authentication = False
     data: contracts.EmptyBodySchema
 
     def resolve(self) -> Instruction:

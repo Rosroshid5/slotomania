@@ -1,16 +1,19 @@
 import json
 from typing import Any
 
+from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 
 from slotomania.exceptions import MissingField
 
 
-class ViewTestCase(TestCase):
+class LoginTestCase(TestCase):
     def POST(self, url: str, data: dict) -> Any:
         return self.client.post(
-            url, data=json.dumps(data), content_type="application/json"
+            url,
+            data=json.dumps(data),
+            content_type="application/json",
         )
 
     def test_missing_username(self) -> None:
@@ -33,6 +36,37 @@ class ViewTestCase(TestCase):
         )
         assert response.status_code == 200
         assert response.data["errors"] == "bad credential"
+
+
+class ViewTestCase(TestCase):
+    def setUp(self):
+        super().setUp()
+        self.jwt_auth_token = ''
+        self.user = get_user_model().objects.create_user(
+            username='tester', password='tester'
+        )
+        res = self.POST(
+            reverse('api', kwargs={
+                'endpoint': 'LoginApp',
+            }),
+            data={
+                'username': 'tester',
+                'password': 'tester'
+            }
+        )
+        assert res.status_code == 200
+        self.jwt_auth_token = next(
+            op for op in res.data['operations']
+            if op['entity_type'] == "jwt_auth_token"
+        )["target_value"]
+
+    def POST(self, url: str, data: dict) -> Any:
+        return self.client.post(
+            url,
+            data=json.dumps(data),
+            content_type="application/json",
+            HTTP_AUTHORIZATION=f'JWT {self.jwt_auth_token}'
+        )
 
     def test_return_http_response(self) -> None:
         url = reverse("api", args=["ReturnHttpResponse"])
