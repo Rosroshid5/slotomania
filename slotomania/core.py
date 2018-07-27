@@ -48,8 +48,6 @@ class InstructorView(View):
 
         if isinstance(response, HttpResponse):
             return response
-        elif hasattr(response, "sloto_to_dict"):
-            return JsonResponse(response.sloto_to_dict())
         elif isinstance(response, dict):
             return JsonResponse(response)
         elif hasattr(response, 'serialize'):

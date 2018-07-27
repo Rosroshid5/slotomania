@@ -26,4 +26,4 @@ A code generator that transforms schemas to Python slot classes and typescript i
 Examples
 ========
 
-see `test_contractory.py <slotomania/tests/test_contractor.py>`_
+see `test_contract.py <slotomania/tests/test_contract.py>`_
