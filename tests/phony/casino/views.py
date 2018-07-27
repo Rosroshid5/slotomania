@@ -1,0 +1,59 @@
+from dataclasses import dataclass
+import datetime
+from decimal import Decimal
+from enum import Enum
+
+from django.http import HttpResponse
+
+from slotomania.contrib import contracts
+from slotomania.contrib.jwt_auth import AuthenticateUser
+from slotomania.core import Contract, Instruction
+from slotomania.core import InstructorView as BaseView
+from slotomania.core import Operation, RequestResolver
+
+
+@dataclass
+class Card(Contract):
+    width: Decimal
+    played_at: datetime.datetime
+
+
+class PhonyEntityTypes(Enum):
+    CARD = 1
+
+
+class ReturnHttpResponse(RequestResolver):
+    use_jwt_authentication = False
+    data: contracts.EmptyBodySchema
+
+    def resolve(self) -> HttpResponse:
+        return HttpResponse("hello")
+
+
+class ReturnInstruction(RequestResolver):
+    data: contracts.EmptyBodySchema
+
+    def resolve(self) -> Instruction:
+        return Instruction(
+            [
+                Operation.MERGE_APPEND(
+                    PhonyEntityTypes.CARD,
+                    target_value=[
+                        Card(
+                            width=Decimal('1.111'),
+                            played_at=datetime.datetime(
+                                2000, 1, 1, 0, 0, 0
+                            )
+                        )
+                    ]
+                )
+            ]
+        )
+
+
+class InstructorView(BaseView):
+    routes = {
+        "LoginApp": AuthenticateUser,
+        "ReturnHttpResponse": ReturnHttpResponse,
+        "ReturnInstruction": ReturnInstruction,
+    }

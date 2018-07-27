@@ -4,8 +4,8 @@ import uuid
 
 from django.conf import settings
 from django.contrib.auth import authenticate, get_user_model, login
-
 import jwt
+
 from slotomania.contrib.contracts import AuthenticateUserRequest
 from slotomania.core import (
     EntityTypes,
@@ -20,7 +20,7 @@ def authenticate_request(request) -> None:
     header = request.META.get("HTTP_AUTHORIZATION")
     try:
         prefix, token = header.split()
-    except ValueError as e:
+    except (ValueError, AttributeError) as e:
         raise NotAuthenticated(f"Invalid header causing {e}: {header}")
 
     if not token:

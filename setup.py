@@ -13,12 +13,12 @@ with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
 
 setup(
     name='slotomania',
-    version='0.0.39',
+    version='0.1.0',
     description='Slotomania',
     long_description=long_description,
     scripts=["bin/fix_sloto_stubs.py"],
     url='https://github.com/conanfanli/slotomania',
-    packages=find_packages(exclude=['tests*']),
+    packages=find_packages(exclude=["*.tests.*"]),
     install_requires=['yapf>=0.21'],
     python_requires='~=3.6',
     extras_require={'dev': ['ipython', 'mypy']},

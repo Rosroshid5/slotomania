@@ -35,25 +35,27 @@ class InstructorView(View):
     def get(self, request: Any, endpoint: str = None) -> JsonResponse:
         return JsonResponse({})
 
-    @transaction.atomic
     def post(
         self, request: Any, endpoint: str, *args, **kwargs
     ) -> JsonResponse:
         """If mustate_state returns HttpResponse, return it."""
-        request.data = json.loads(request.body)
-        resolver = self.routes[endpoint](request=request, data=request.data)
+        with transaction.atomic():
+            request.data = json.loads(request.body)
+            resolver = self.routes[endpoint](
+                request=request, data=request.data
+            )
 
-        resolver.authenticate()
-        response = resolver.resolve()
+            resolver.authenticate()
+            response = resolver.resolve()
 
-        if isinstance(response, HttpResponse):
-            return response
-        elif isinstance(response, dict):
-            return JsonResponse(response)
-        elif hasattr(response, 'serialize'):
-            return JsonResponse(response.serialize())
-        else:
-            raise AssertionError('Unknow type: {}'.format(type(response)))
+            if isinstance(response, HttpResponse):
+                return response
+            elif isinstance(response, dict):
+                return JsonResponse(response)
+            elif hasattr(response, 'serialize'):
+                return JsonResponse(response.serialize())
+            else:
+                raise AssertionError('Unknow type: {}'.format(type(response)))
 
 
 class Verbs(Enum):
@@ -189,15 +191,6 @@ class RequestResolver:
         self.request = request
         self._data = data
         self.clean_request_data()
-
-    @classmethod
-    def get_schema(cls):
-        # TODO: deprecate schemas
-        contract_class = cls.__annotations__["data"]
-        try:
-            return class_registry.get_class(contract_class.__name__)()
-        except Exception:
-            return None
 
     def clean_request_data(self) -> None:
         contract_class = self.__class__.__annotations__["data"]
