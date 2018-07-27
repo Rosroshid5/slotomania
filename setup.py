@@ -18,7 +18,7 @@ setup(
     long_description=long_description,
     scripts=["bin/fix_sloto_stubs.py"],
     url='https://github.com/conanfanli/slotomania',
-    packages=find_packages(exclude=['tests*']),
+    packages=find_packages(exclude=["*.tests.*"]),
     install_requires=['yapf>=0.21'],
     python_requires='~=3.6',
     extras_require={'dev': ['ipython', 'mypy']},

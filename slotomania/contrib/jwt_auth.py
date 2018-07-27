@@ -4,8 +4,8 @@ import uuid
 
 from django.conf import settings
 from django.contrib.auth import authenticate, get_user_model, login
-
 import jwt
+
 from slotomania.contrib.contracts import AuthenticateUserRequest
 from slotomania.core import (
     EntityTypes,

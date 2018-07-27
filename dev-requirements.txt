@@ -5,10 +5,12 @@ twine==1.11.0
 yapf==0.22.0
 pytest==3.6.3
 pytest-cov==2.5.1
+pytest-django
 marshmallow>=3.0.0b8
 flake8==3.5.0
 codecov==2.0.15
 ipdb==0.11
 django
+pyjwt
 
 m2r==0.1.15
