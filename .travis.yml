@@ -1,12 +1,12 @@
 language: python
 sudo: enabled
 python:
-  - 3.6.5
+  - 3.7.0
 
 install:
   - pip3 install -r dev-requirements.txt
 
 script:
     - mypy .
-    - pytest . --cov
+    - PYTHONPATH=. pytest . --cov
     - codecov
