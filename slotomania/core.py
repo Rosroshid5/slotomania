@@ -192,15 +192,6 @@ class RequestResolver:
         self._data = data
         self.clean_request_data()
 
-    @classmethod
-    def get_schema(cls):
-        # TODO: deprecate schemas
-        contract_class = cls.__annotations__["data"]
-        try:
-            return class_registry.get_class(contract_class.__name__)()
-        except Exception:
-            return None
-
     def clean_request_data(self) -> None:
         contract_class = self.__class__.__annotations__["data"]
         if issubclass(contract_class, Contract):
