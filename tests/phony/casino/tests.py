@@ -15,6 +15,7 @@ class ViewTestCase(TestCase):
 
     def test_missing_username(self) -> None:
         url = reverse("api", args=["LoginApp"])
+        assert self.client.get(url).data == {}
         with self.assertRaises(MissingField):
             self.POST(
                 url,
@@ -32,3 +33,23 @@ class ViewTestCase(TestCase):
         )
         assert response.status_code == 200
         assert response.data["errors"] == "bad credential"
+
+    def test_return_http_response(self) -> None:
+        url = reverse("api", args=["ReturnHttpResponse"])
+        response = self.POST(url, {})
+        assert response.content == b"hello"
+
+    def test_return_instruction(self) -> None:
+        url = reverse("api", args=["ReturnInstruction"])
+        response = self.POST(url, {})
+        assert response.data["operations"][0] == {
+            "verb":
+            "MERGE_APPEND",
+            "entity_type":
+            "CARD",
+            "target_value":
+            [{
+                "width": "1.111",
+                "played_at": "2000-01-01T00:00:00"
+            }],
+        }
