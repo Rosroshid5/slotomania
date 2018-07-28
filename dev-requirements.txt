@@ -12,6 +12,6 @@ codecov==2.0.15
 ipdb==0.11
 django==2.0.7
 pyjwt==1.6.4
-isort
+isort==4.3.4
 
 m2r==0.1.15
