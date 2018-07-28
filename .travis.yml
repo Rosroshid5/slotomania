@@ -1,12 +1,15 @@
 language: python
-sudo: enabled
-python:
-  - 3.7.0
+sudo: required
+service:
+    docker
 
-install:
-  - pip3 install -r dev-requirements.txt
+before_install:
+    - docker build -t sloto .
+    - pip install codecov
 
 script:
-    - mypy .
-    - PYTHONPATH=. pytest . --cov
+    - docker run --name sloto-container sloto make coverage
+    - docker cp sloto-container:/code/.coverage .
+    - docker cp sloto-container:/code/coverage.xml .
     - codecov
+
