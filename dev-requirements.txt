@@ -10,7 +10,7 @@ marshmallow>=3.0.0b8
 flake8==3.5.0
 codecov==2.0.15
 ipdb==0.11
-django
+django==2.0.7
 pyjwt==1.6.4
 isort
 
