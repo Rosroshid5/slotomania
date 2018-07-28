@@ -5,7 +5,7 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 
-from slotomania.exceptions import MissingField
+from slotomania.exceptions import MissingField, NotAuthenticated
 
 
 class LoginTestCase(TestCase):
@@ -41,7 +41,7 @@ class LoginTestCase(TestCase):
 class ViewTestCase(TestCase):
     def setUp(self):
         super().setUp()
-        self.jwt_auth_token = ''
+        self.jwt_auth_token = ""
         self.user = get_user_model().objects.create_user(
             username='tester', password='tester'
         )
@@ -68,6 +68,12 @@ class ViewTestCase(TestCase):
             HTTP_AUTHORIZATION=f'JWT {self.jwt_auth_token}'
         )
 
+    def test_not_authenticated(self) -> None:
+        self.jwt_auth_token = "bad token"
+        url = reverse("api", args=["ReturnInstruction"])
+        with self.assertRaises(NotAuthenticated):
+            self.POST(url, {})
+
     def test_return_http_response(self) -> None:
         url = reverse("api", args=["ReturnHttpResponse"])
         response = self.POST(url, {})
@@ -81,9 +87,11 @@ class ViewTestCase(TestCase):
             "MERGE_APPEND",
             "entity_type":
             "CARD",
-            "target_value":
-            [{
-                "width": "1.111",
-                "played_at": "2000-01-01T00:00:00"
-            }],
+            "target_value": [
+                {
+                    "rank": 10,
+                    "width": "1.111",
+                    "played_at": "2000-01-01T00:00:00"
+                }
+            ],
         }

@@ -3,7 +3,15 @@ import datetime
 from typing import List, Optional
 from unittest import TestCase
 
-from slotomania.core import Contract, ReduxAction, contracts_to_typescript
+from slotomania.contrib.contracts import AuthenticateUserRequest
+from slotomania.core import (
+    Contract,
+    EntityTypes,
+    Instruction,
+    Operation,
+    ReduxAction,
+    contracts_to_typescript,
+)
 
 
 @dataclass
@@ -49,3 +57,31 @@ export function CreatePerson(requestBody: Person): any {
 export const SLOTO_ACTION_CREATORS = { CreatePerson }"""
 
         assert man == man.load_from_dict(asdict(man))
+
+
+class InstructorTestCase(TestCase):
+    def test_instruction_serialize(self) -> None:
+        instruction = Instruction(
+            [
+                Operation.OVERWRITE(
+                    EntityTypes.jwt_auth_token,
+                    target_value=[AuthenticateUserRequest("user", "pass")]
+                )
+            ]
+        )
+        assert instruction.serialize() == {
+            "errors":
+            None,
+            "redirect":
+            "",
+            "operations": [
+                {
+                    "verb": "OVERWRITE",
+                    "entity_type": "jwt_auth_token",
+                    "target_value": [{
+                        "username": "user",
+                        "password": "pass"
+                    }],
+                }
+            ]
+        }

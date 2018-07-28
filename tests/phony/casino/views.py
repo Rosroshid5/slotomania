@@ -14,6 +14,7 @@ from slotomania.core import Operation, RequestResolver
 
 @dataclass
 class Card(Contract):
+    rank: int
     width: Decimal
     played_at: datetime.datetime
 
@@ -40,10 +41,9 @@ class ReturnInstruction(RequestResolver):
                     PhonyEntityTypes.CARD,
                     target_value=[
                         Card(
+                            rank=10,
                             width=Decimal('1.111'),
-                            played_at=datetime.datetime(
-                                2000, 1, 1, 0, 0, 0
-                            )
+                            played_at=datetime.datetime(2000, 1, 1, 0, 0, 0)
                         )
                     ]
                 )
