@@ -79,6 +79,15 @@ class ViewTestCase(TestCase):
         with self.assertRaises(NotAuthenticated):
             self.POST(url, {})
 
+        self.jwt_auth_token = ""
+        with self.assertRaises(NotAuthenticated):
+            self.client.post(
+                url,
+                data=json.dumps({}),
+                content_type="application/json",
+                HTTP_AUTHORIZATION=f'JWT'
+            )
+
     def test_return_http_response(self) -> None:
         url = reverse("api", args=["ReturnHttpResponse"])
         response = self.POST(url, {})
