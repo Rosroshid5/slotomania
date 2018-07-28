@@ -19,7 +19,7 @@ from slotomania.exceptions import NotAuthenticated
 def authenticate_request(request) -> None:
     header = request.META.get("HTTP_AUTHORIZATION")
     try:
-        prefix, token = header.split()
+        prefix, token = header.split(" ")
     except (ValueError, AttributeError) as e:
         raise NotAuthenticated(f"Invalid header causing {e}: {header}")
 

@@ -69,8 +69,13 @@ class ViewTestCase(TestCase):
         )
 
     def test_not_authenticated(self) -> None:
-        self.jwt_auth_token = "bad token"
+        self.jwt_auth_token = "badtoken"
         url = reverse("api", args=["ReturnInstruction"])
+        with self.assertRaises(NotAuthenticated):
+            self.POST(url, {})
+
+        # emtpy token
+        self.jwt_auth_token = ""
         with self.assertRaises(NotAuthenticated):
             self.POST(url, {})
 
