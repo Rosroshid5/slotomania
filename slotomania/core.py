@@ -95,7 +95,7 @@ class Contract:
         PRIMITIVES = list(TYPE_MAP.keys())
 
         def convert_value(value, value_type):
-            if value_type in PRIMITIVES:
+            if value_type in PRIMITIVES or isinstance(value, Enum):
                 return value
             elif is_dataclass(value_type):
                 return value_type.load_from_dict(value)
@@ -145,14 +145,11 @@ class Operation(Contract):
         return Operation(Verbs.MERGE_PREPEND, entity_type, target_value)
 
     @classmethod
-    def DELETE(cls, entity_type: Enum,
-               target_value) -> 'Operation':
+    def DELETE(cls, entity_type: Enum, target_value) -> 'Operation':
         return Operation(Verbs.DELETE, entity_type, target_value)
 
     @classmethod
-    def OVERWRITE(
-        cls, entity_type: Enum, target_value
-    ) -> 'Operation':
+    def OVERWRITE(cls, entity_type: Enum, target_value) -> 'Operation':
         return Operation(Verbs.OVERWRITE, entity_type, target_value)
 
 
@@ -309,9 +306,16 @@ def contract_to_redux_action_creator(
 }}"""
 
 
+def enum_to_typescript(enum_class: Type[Enum]) -> str:
+    body = ",\n".join(
+        f"  {member.name} = '{member.name}'" for member in enum_class
+    )
+    return 'export enum {} {{\n{}\n}}'.format(enum_class.__name__, body)
+
+
 def contracts_to_typescript(
     *,
-    dataclasses: List[Type[Contract]],
+    dataclasses: List[Union[Type[Contract], Type[Enum]]],
     redux_actions: List[ReduxAction],
     import_plugins: bool = True,
 ) -> str:
@@ -324,7 +328,11 @@ def contracts_to_typescript(
     """
     blocks = import_plugins and ['import * as plugins from "./plugins"'] or []
     for index, contract in enumerate(dataclasses):
-        blocks.append(contract.to_typescript_interface())
+        if issubclass(contract, Contract):
+            blocks.append(contract.to_typescript_interface())
+        else:
+            assert issubclass(contract, Enum)
+            blocks.append(enum_to_typescript(contract))
 
     if redux_actions:
         blocks.append(
