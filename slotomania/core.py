@@ -65,6 +65,13 @@ class Verbs(Enum):
     OVERWRITE = auto()
 
 
+def is_subclass(obj, cls):
+    try:
+        return issubclass(obj, cls)
+    except TypeError:
+        return None
+
+
 @dataclass
 class Contract:
     def asdict(self) -> dict:
@@ -95,8 +102,11 @@ class Contract:
         PRIMITIVES = list(TYPE_MAP.keys())
 
         def convert_value(value, value_type):
-            if value_type in PRIMITIVES or isinstance(value, Enum):
+            if value_type in PRIMITIVES:
                 return value
+            elif is_subclass(value_type, Enum):
+                return value_type[value
+                                  if isinstance(value, str) else value.name]
             elif is_dataclass(value_type):
                 return value_type.load_from_dict(value)
             elif getattr(value_type, "__origin__", None) == Union:
