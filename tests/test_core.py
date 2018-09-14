@@ -37,16 +37,17 @@ class DataclassConverterTestCase(TestCase):
     def test_dataclass_converter(self) -> None:
         assert is_dataclass(Person)
         man = Person(
-            "Bond", Gender.male, datetime.datetime.utcnow(),
-            [Address("easy street")]
+            "Bond", Gender.male, datetime.datetime.utcnow(), [Address("easy street")]
         )
         woman = Person("Girl", Gender.female, datetime.datetime.utcnow())
         assert is_dataclass(man) and is_dataclass(woman)
-        assert contracts_to_typescript(
-            dataclasses=[Gender, Person],
-            redux_actions=[ReduxAction(name="CreatePerson", contract=Person)],
-            import_plugins=False,
-        ) == """export enum Gender {
+        assert (
+            contracts_to_typescript(
+                dataclasses=[Gender, Person],
+                redux_actions=[ReduxAction(name="CreatePerson", contract=Person)],
+                import_plugins=False,
+            )
+            == """export enum Gender {
   male = 'male',
   female = 'female'
 }
@@ -67,6 +68,7 @@ export function CreatePerson(requestBody: Person): any {
     }
 
 export const SLOTO_ACTION_CREATORS = { CreatePerson }"""
+        )
 
         assert man == man.load_from_dict(asdict(man))
 
@@ -77,23 +79,18 @@ class InstructorTestCase(TestCase):
             [
                 Operation.OVERWRITE(
                     EntityTypes.jwt_auth_token,
-                    target_value=[AuthenticateUserRequest("user", "pass")]
+                    target_value=[AuthenticateUserRequest("user", "pass")],
                 )
             ]
         )
         assert instruction.serialize() == {
-            "errors":
-            None,
-            "redirect":
-            "",
+            "errors": None,
+            "redirect": "",
             "operations": [
                 {
                     "verb": "OVERWRITE",
                     "entity_type": "jwt_auth_token",
-                    "target_value": [{
-                        "username": "user",
-                        "password": "pass"
-                    }],
+                    "target_value": [{"username": "user", "password": "pass"}],
                 }
-            ]
+            ],
         }

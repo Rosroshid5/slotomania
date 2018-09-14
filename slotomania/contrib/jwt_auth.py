@@ -7,12 +7,7 @@ from django.contrib.auth import authenticate, get_user_model, login
 import jwt
 
 from slotomania.contrib.contracts import AuthenticateUserRequest
-from slotomania.core import (
-    EntityTypes,
-    Instruction,
-    Operation,
-    RequestResolver,
-)
+from slotomania.core import EntityTypes, Instruction, Operation, RequestResolver
 from slotomania.exceptions import NotAuthenticated
 
 
@@ -59,9 +54,7 @@ def authenticate_credentials(payload) -> Any:
 
 
 def jwt_decode_handler(token) -> Mapping[str, Any]:
-    options = {
-        'verify_exp': True,
-    }
+    options = {"verify_exp": True}
     secret_key = settings.SECRET_KEY
     return jwt.decode(
         token,
@@ -71,32 +64,28 @@ def jwt_decode_handler(token) -> Mapping[str, Any]:
         leeway=0,
         audience=None,
         issuer=None,
-        algorithms=['HS256']
+        algorithms=["HS256"],
     )
 
 
 def jwt_encode_handler(payload) -> str:
     key = settings.SECRET_KEY
-    return jwt.encode(payload, key, 'HS256').decode('utf-8')
+    return jwt.encode(payload, key, "HS256").decode("utf-8")
 
 
 def jwt_payload_handler(user) -> dict:
     username = user.username
 
     payload = {
-        'user_id':
-        user.pk,
-        'username':
-        username,
-        'exp':
-        datetime.datetime.utcnow() + getattr(
-            settings, "JWT_EXPIRATION_DELTA", datetime.timedelta(seconds=300)
-        )
+        "user_id": user.pk,
+        "username": username,
+        "exp": datetime.datetime.utcnow()
+        + getattr(settings, "JWT_EXPIRATION_DELTA", datetime.timedelta(seconds=300)),
     }
-    if hasattr(user, 'email'):
-        payload['email'] = user.email
+    if hasattr(user, "email"):
+        payload["email"] = user.email
     if isinstance(user.pk, uuid.UUID):
-        payload['user_id'] = str(user.pk)
+        payload["user_id"] = str(user.pk)
 
     payload["username"] = username
     return payload
@@ -104,6 +93,7 @@ def jwt_payload_handler(user) -> dict:
 
 class AuthenticateUser(RequestResolver):
     """Login and InitApp."""
+
     data: AuthenticateUserRequest
     use_jwt_authentication: ClassVar[bool] = False
 
@@ -117,8 +107,6 @@ class AuthenticateUser(RequestResolver):
 
             payload = jwt_payload_handler(user)
             token = jwt_encode_handler(payload)
-            return Instruction(
-                [Operation.OVERWRITE(EntityTypes.jwt_auth_token, token)]
-            )
+            return Instruction([Operation.OVERWRITE(EntityTypes.jwt_auth_token, token)])
 
-        return Instruction(operations=[], errors='bad credential')
+        return Instruction(operations=[], errors="bad credential")

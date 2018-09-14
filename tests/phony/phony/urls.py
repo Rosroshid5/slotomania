@@ -20,10 +20,6 @@ from django.views.decorators.csrf import csrf_exempt
 from tests.phony.casino.views import InstructorView
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path(
-        'api/<str:endpoint>',
-        csrf_exempt(InstructorView.as_view()),
-        name='api'
-    )
+    path("admin/", admin.site.urls),
+    path("api/<str:endpoint>", csrf_exempt(InstructorView.as_view()), name="api"),
 ]

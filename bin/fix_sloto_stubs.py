@@ -14,9 +14,7 @@ def fix_stubs(file_path):
     imported = False
     with open(file_path) as f:
         for line in f:
-            if not imported and (
-                line.startswith('import') or line.startswith("from ")
-            ):
+            if not imported and (line.startswith("import") or line.startswith("from ")):
                 new_lines.append("from dataclasses import dataclass\n")
                 imported = True
 

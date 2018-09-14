@@ -42,10 +42,10 @@ class ReturnInstruction(RequestResolver):
                     target_value=[
                         Card(
                             rank=10,
-                            width=Decimal('1.111'),
-                            played_at=datetime.datetime(2000, 1, 1, 0, 0, 0)
+                            width=Decimal("1.111"),
+                            played_at=datetime.datetime(2000, 1, 1, 0, 0, 0),
                         )
-                    ]
+                    ],
                 )
             ]
         )
