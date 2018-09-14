@@ -6,7 +6,6 @@ yapf==0.24.0
 pytest==3.8.0
 pytest-cov==2.6.0
 pytest-django==3.3.3
-marshmallow>=3.0.0b8
 flake8==3.5.0
 codecov==2.0.15
 ipdb==0.11
