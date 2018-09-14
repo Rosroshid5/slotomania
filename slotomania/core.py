@@ -11,7 +11,6 @@ from django.db import transaction
 from django.http import HttpResponse
 from django.http import JsonResponse as DjangoJsonResponse
 from django.views import View
-from marshmallow import class_registry
 
 from slotomania.exceptions import BadResolver, MissingField, UnknowFieldType
 
@@ -35,15 +34,11 @@ class InstructorView(View):
     def get(self, request: Any, endpoint: str = None) -> JsonResponse:
         return JsonResponse({})
 
-    def post(
-        self, request: Any, endpoint: str, *args, **kwargs
-    ) -> JsonResponse:
+    def post(self, request: Any, endpoint: str, *args, **kwargs) -> JsonResponse:
         """If mustate_state returns HttpResponse, return it."""
         with transaction.atomic():
             request.data = json.loads(request.body)
-            resolver = self.routes[endpoint](
-                request=request, data=request.data
-            )
+            resolver = self.routes[endpoint](request=request, data=request.data)
 
             resolver.authenticate()
             response = resolver.resolve()
@@ -52,10 +47,10 @@ class InstructorView(View):
                 return response
             elif isinstance(response, dict):
                 return JsonResponse(response)
-            elif hasattr(response, 'serialize'):
+            elif hasattr(response, "serialize"):
                 return JsonResponse(response.serialize())
             else:
-                raise AssertionError('Unknow type: {}'.format(type(response)))
+                raise AssertionError("Unknow type: {}".format(type(response)))
 
 
 class Verbs(Enum):
@@ -83,17 +78,15 @@ class Contract:
 
     @classmethod
     def to_typescript_interface(cls: Type["Contract"]) -> str:
-        interface_body = '\n'.join(
+        interface_body = "\n".join(
             [
                 f"  {field.name}: {field_to_typescript(field)}"
-                if is_field_required(field) else
-                f"  {field.name}?: {field_to_typescript(field)}"
+                if is_field_required(field)
+                else f"  {field.name}?: {field_to_typescript(field)}"
                 for name, field in cls.get_fields().items()
             ]
         )
-        return 'export interface {} {{\n{}\n}}'.format(
-            cls.__name__, interface_body
-        )
+        return "export interface {} {{\n{}\n}}".format(cls.__name__, interface_body)
 
     @classmethod
     def load_from_dict(cls: Type[T], data: dict) -> T:
@@ -105,8 +98,7 @@ class Contract:
             if value_type in PRIMITIVES:
                 return value
             elif is_subclass(value_type, Enum):
-                return value_type[value
-                                  if isinstance(value, str) else value.name]
+                return value_type[value if isinstance(value, str) else value.name]
             elif is_dataclass(value_type):
                 return value_type.load_from_dict(value)
             elif getattr(value_type, "__origin__", None) == Union:
@@ -118,9 +110,7 @@ class Contract:
                 nested_type = value_type.__args__[0]
                 return [convert_value(item, nested_type) for item in value]
             else:
-                raise Exception(
-                    f"not sure what to do with {value_type}: {value}"
-                )
+                raise Exception(f"not sure what to do with {value_type}: {value}")
 
         for key in data:
             if key in cls.get_fields():
@@ -141,25 +131,21 @@ class Operation(Contract):
     target_value: Any
 
     @classmethod
-    def MERGE_APPEND(cls, entity_type: Enum, target_value) -> 'Operation':
-        assert isinstance(
-            target_value, list
-        ), f"'{target_value}' is not a list"
+    def MERGE_APPEND(cls, entity_type: Enum, target_value) -> "Operation":
+        assert isinstance(target_value, list), f"'{target_value}' is not a list"
         return Operation(Verbs.MERGE_APPEND, entity_type, target_value)
 
     @classmethod
-    def MERGE_PREPEND(cls, entity_type: Enum, target_value) -> 'Operation':
-        assert isinstance(
-            target_value, list
-        ), f"'{target_value}' is not a list"
+    def MERGE_PREPEND(cls, entity_type: Enum, target_value) -> "Operation":
+        assert isinstance(target_value, list), f"'{target_value}' is not a list"
         return Operation(Verbs.MERGE_PREPEND, entity_type, target_value)
 
     @classmethod
-    def DELETE(cls, entity_type: Enum, target_value) -> 'Operation':
+    def DELETE(cls, entity_type: Enum, target_value) -> "Operation":
         return Operation(Verbs.DELETE, entity_type, target_value)
 
     @classmethod
-    def OVERWRITE(cls, entity_type: Enum, target_value) -> 'Operation':
+    def OVERWRITE(cls, entity_type: Enum, target_value) -> "Operation":
         return Operation(Verbs.OVERWRITE, entity_type, target_value)
 
 
@@ -169,7 +155,7 @@ class InstructionEncoder(json.JSONEncoder):
             return obj.name
         elif is_dataclass(obj):
             return asdict(obj)
-        elif hasattr(obj, 'isoformat'):
+        elif hasattr(obj, "isoformat"):
             return obj.isoformat()
         elif isinstance(obj, decimal.Decimal):
             return str(obj)
@@ -181,7 +167,7 @@ class InstructionEncoder(json.JSONEncoder):
 class Instruction(Contract):
     operations: List[Operation]
     errors: Any = None
-    redirect: str = ''
+    redirect: str = ""
 
     def serialize(self) -> dict:
         return json.loads(json.dumps(self, cls=InstructionEncoder))
@@ -213,15 +199,14 @@ class RequestResolver:
                 "data"
             ), f"{cls} cannot define 'resovle' without annotating 'data'"
             if not cls.resolve.__annotations__:
-                raise BadResolver(
-                    f"{cls} must annotate resolve method if defined"
-                )
+                raise BadResolver(f"{cls} must annotate resolve method if defined")
 
     def authenticate(self) -> None:
         if not self.use_jwt_authentication:
             return
 
         from .contrib.jwt_auth import authenticate_request
+
         authenticate_request(self.request)
 
 
@@ -234,15 +219,15 @@ def is_field_required(field: Field) -> bool:
 
 
 TYPE_MAP = {
-    str: 'string',
-    bool: 'boolean',
-    int: 'number',
-    Decimal: 'string',
-    float: 'number',
-    datetime.datetime: 'string',
-    dict: '{}',
-    Any: 'any',
-    list: 'Array<any>',
+    str: "string",
+    bool: "boolean",
+    int: "number",
+    Decimal: "string",
+    float: "number",
+    datetime.datetime: "string",
+    dict: "{}",
+    Any: "any",
+    list: "Array<any>",
 }
 
 
@@ -297,15 +282,11 @@ class ReduxAction(Contract):
                 plugins.callEndpoint("{self.name}", requestBody, {self.callback})
             )
         }}
-    }}""" # NOQA
+    }}"""  # NOQA
 
 
 def contract_to_redux_action_creator(
-    *,
-    contract: Type[Contract],
-    function_name: str,
-    callback='',
-    pre_action='',
+    *, contract: Type[Contract], function_name: str, callback="", pre_action=""
 ) -> str:
     return f"""export function {function_name}(requestBody: {contract.__name__}): any {{
     return (dispatch) => {{{pre_action}
@@ -317,10 +298,8 @@ def contract_to_redux_action_creator(
 
 
 def enum_to_typescript(enum_class: Type[Enum]) -> str:
-    body = ",\n".join(
-        f"  {member.name} = '{member.name}'" for member in enum_class
-    )
-    return 'export enum {} {{\n{}\n}}'.format(enum_class.__name__, body)
+    body = ",\n".join(f"  {member.name} = '{member.name}'" for member in enum_class)
+    return "export enum {} {{\n{}\n}}".format(enum_class.__name__, body)
 
 
 def contracts_to_typescript(
@@ -346,13 +325,9 @@ def contracts_to_typescript(
 
     if redux_actions:
         blocks.append(
-            "\n\n".join(
-                action.to_typescript_function() for action in redux_actions
-            )
+            "\n\n".join(action.to_typescript_function() for action in redux_actions)
         )
-        names = ',\n'.join([action.name for action in redux_actions])
-        blocks.append(
-            f"""export const SLOTO_ACTION_CREATORS = {{ {names} }}"""
-        )
+        names = ",\n".join([action.name for action in redux_actions])
+        blocks.append(f"""export const SLOTO_ACTION_CREATORS = {{ {names} }}""")
 
     return "\n\n".join(blocks)
