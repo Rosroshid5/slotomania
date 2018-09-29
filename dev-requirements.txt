@@ -1,5 +1,5 @@
 ipython==7.0.1
-wheel==0.31.1
+wheel==0.32.0
 mypy==0.620
 twine==1.11.0
 yapf==0.24.0
